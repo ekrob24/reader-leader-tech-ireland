@@ -182,7 +182,14 @@ create policy evidence_org_read on public.evidence_bundles for select using (
 create policy decision_org_read on public.agent_decisions for select using (
   exists (select 1 from public.reading_sessions s where s.id = session_id and public.is_org_member(s.organisation_id))
 );
-create policy human_review_insert on public.human_reviews for insert with check (reviewer_id = auth.uid());
+create policy human_review_insert on public.human_reviews for insert with check (
+  reviewer_id = auth.uid() and exists (
+    select 1 from public.agent_decisions d
+    join public.reading_sessions s on s.id = d.session_id
+    where d.id = agent_decision_id
+      and public.has_role(s.organisation_id, array['school_admin','literacy_lead','teacher_set']::public.app_role[])
+  )
+);
 create policy audit_self_read on public.audit_events for select using (actor_id = auth.uid());
 
 -- Client roles cannot mutate immutable evidence, decisions, or audit records.

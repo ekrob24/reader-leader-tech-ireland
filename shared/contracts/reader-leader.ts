@@ -183,6 +183,54 @@ export const AuditEvent = z.object({
 });
 export type AuditEvent = z.infer<typeof AuditEvent>;
 
+export const PronunciationLexiconEntry = z.object({
+  referenceWord: nonEmptyText,
+  regionalForm: nonEmptyText,
+  region: nonEmptyText,
+  evidenceRef: nonEmptyText,
+});
+export type PronunciationLexiconEntry = z.infer<typeof PronunciationLexiconEntry>;
+
+export const PronunciationClassificationInput = z.object({
+  referenceWord: nonEmptyText,
+  observedForm: nonEmptyText.nullable(),
+  region: z.string().trim().length(2),
+  lexicon: z.array(PronunciationLexiconEntry),
+});
+export type PronunciationClassificationInput = z.infer<typeof PronunciationClassificationInput>;
+
+export const PronunciationClassification = z.object({
+  context: PronunciationContext,
+  matched: z.boolean(),
+  confidence: boundedConfidence,
+  evidenceRefs: z.array(nonEmptyText).min(1),
+  reasonCode: nonEmptyText,
+});
+export type PronunciationClassification = z.infer<typeof PronunciationClassification>;
+
+export const PolicyConfig = z.object({
+  minEvidenceConfidence: boundedConfidence,
+  minActionConfidence: boundedConfidence,
+  patienceWindowMs: z.number().int().nonnegative(),
+});
+export type PolicyConfig = z.infer<typeof PolicyConfig>;
+
+export const PolicyAuditEvent = z.object({
+  traceId: nonEmptyText,
+  policyVersion: nonEmptyText,
+  originalAction: Action,
+  validatedAction: Action,
+});
+
+export const PolicyResult = z.object({
+  accepted: z.boolean(),
+  action: Action,
+  reasonCode: nonEmptyText,
+  violations: z.array(nonEmptyText),
+  auditEvent: PolicyAuditEvent,
+});
+export type PolicyResult = z.infer<typeof PolicyResult>;
+
 export const S1S3ContractNames = z.enum([
   "EvidenceBundle",
   "FixtureEvidenceCase",

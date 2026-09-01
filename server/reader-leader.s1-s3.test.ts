@@ -8,6 +8,12 @@ import {
   FixtureEvidenceCase,
   FixtureEvidencePack,
 } from "@shared/contracts/reader-leader";
+import { classifyPronunciationContext } from "./reader-leader/pronunciation-context";
+import {
+  deterministicFallback,
+  runJudgementAgent,
+} from "./reader-leader/judgement-agent";
+import { validateDecision } from "./reader-leader/policy-gate";
 import {
   loadGoldPack,
   loadGoldPackFromValue,
@@ -36,7 +42,7 @@ function validDecision() {
     eventType: "SUBSTITUTION",
     reasonCode: "CLEAR_SUBSTITUTION",
     confidence: 0.95,
-    evidenceRefs: ["ev-001"],
+    evidenceRefs: ["ev-001", "align-001"],
     teacherNote: "Review the substitution.",
     policyVersion: "policy-2026.09.1",
     traceId: "trace-001",
@@ -144,6 +150,130 @@ describe("S2 · behavioral RLS boundary model", () => {
     expect(canClientMutate("human_reviews", "insert")).toBe(true);
     expect(canClientMutate("human_reviews", "update")).toBe(false);
     expect(canClientMutate("human_reviews", "delete")).toBe(false);
+  });
+});
+
+describe("S4 · pronunciation-context classification", () => {
+  const input = {
+    referenceWord: "again",
+    observedForm: "agen",
+    region: "IE",
+    lexicon: [
+      { referenceWord: "again", regionalForm: "agen", region: "IE", evidenceRef: "pron-irish-west-01" },
+    ],
+  } as const;
+
+  it("classifies an approved regional form with lexicon evidence", () => {
+    expect(classifyPronunciationContext(input)).toEqual({
+      context: "VALID_REGIONAL_VARIANT",
+      matched: true,
+      confidence: 1,
+      evidenceRefs: ["pron-irish-west-01"],
+      reasonCode: "VALID_REGIONAL_VARIANT",
+    });
+  });
+
+  it("distinguishes exact matches, lexical mismatches, and missing observations", () => {
+    expect(classifyPronunciationContext({ ...input, observedForm: "again" }).context).toBe("NOT_MATCHED");
+    expect(classifyPronunciationContext({ ...input, observedForm: "agen", lexicon: [] }).context).toBe("NOT_MATCHED");
+    expect(classifyPronunciationContext({ ...input, observedForm: null }).context).toBe("UNCERTAIN");
+  });
+
+  it("does not confirm a regional variant when the region is not confirmed", () => {
+    expect(
+      classifyPronunciationContext({
+        ...input,
+        lexicon: [{ ...input.lexicon[0], region: "GB" }],
+      }).context,
+    ).toBe("UNCERTAIN");
+  });
+});
+
+describe("S5 · bounded judgement", () => {
+  it("parses structured output and pins evidence metadata over model claims", async () => {
+    const evidence = (await loadGoldPack()).cases[0];
+    const result = await runJudgementAgent({
+      sessionId: evidence.sessionId,
+      wordEventId: evidence.wordEventId,
+      traceId: "trace-s5",
+      tools: { getEvidence: async () => evidence },
+      modelRunner: async () => ({
+        action: "PROMPT",
+        eventType: "CORRECT",
+        reasonCode: "CLEAR_SUBSTITUTION",
+        confidence: 0.9,
+        evidenceRefs: ["invented-ref"],
+        teacherNote: "Review the event.",
+        policyVersion: "forged-policy",
+        traceId: "forged-trace",
+      }),
+    });
+    expect(result.traceId).toBe("trace-s5");
+    expect(result.policyVersion).toBe(evidence.policyVersion);
+    expect(result.eventType).toBe(evidence.eventType);
+    expect(result.evidenceRefs).toEqual(evidence.evidenceRefs);
+  });
+
+  it("provides a safe deterministic fallback when the model is unavailable", async () => {
+    const evidence = (await loadGoldPack()).cases[3];
+    expect(deterministicFallback(evidence, "trace-fallback")).toMatchObject({
+      action: "ESCALATE",
+      reasonCode: "MODEL_UNAVAILABLE_SAFE_FALLBACK",
+      traceId: "trace-fallback",
+    });
+  });
+});
+
+describe("S6 · deterministic policy gate", () => {
+  it("accepts a high-confidence substitution after patience", async () => {
+    const evidence = (await loadGoldPack()).cases[0];
+    const result = validateDecision(validDecision(), evidence);
+    expect(result).toMatchObject({ accepted: true, action: "PROMPT" });
+  });
+
+  it("forces valid regional pronunciation and correct events to silence", async () => {
+    const pack = await loadGoldPack();
+    const regional = pack.cases[1];
+    const regionalResult = validateDecision({ ...validDecision(), eventType: regional.eventType }, regional);
+    expect(regionalResult.action).toBe("STAY_SILENT");
+    expect(regionalResult.violations).toContain("REGIONAL_VARIANT_MUST_STAY_SILENT");
+
+    const correctResult = validateDecision(
+      { ...validDecision(), eventType: "CORRECT" },
+      { ...regional, eventType: "CORRECT", pronunciationContext: "NOT_MATCHED" },
+    );
+    expect(correctResult.action).toBe("STAY_SILENT");
+    expect(correctResult.violations).toContain("CORRECT_EVENT_MUST_STAY_SILENT");
+  });
+
+  it("protects self-correction and escalates weak or uncertain evidence", async () => {
+    const pack = await loadGoldPack();
+    const self = pack.cases[2];
+    const selfResult = validateDecision({ ...validDecision(), eventType: self.eventType }, self);
+    expect(selfResult.action).toBe("STAY_SILENT");
+    expect(selfResult.violations).toContain("SELF_CORRECTION_PROTECTION");
+
+    const weak = pack.cases[3];
+    const weakResult = validateDecision({ ...validDecision(), eventType: weak.eventType, confidence: 0.95 }, weak);
+    expect(weakResult.action).toBe("ESCALATE");
+    expect(weakResult.violations).toContain("LOW_EVIDENCE_CONFIDENCE");
+  });
+
+  it("fails closed for malformed output, mismatched metadata, and patience violations", async () => {
+    const evidence = (await loadGoldPack()).cases[0];
+    const malformed = validateDecision({ action: "PROMPT" }, evidence);
+    expect(malformed).toMatchObject({ accepted: false, action: "STAY_SILENT", reasonCode: "INVALID_AGENT_OUTPUT" });
+
+    const mismatch = validateDecision({ ...validDecision(), policyVersion: "wrong-policy" }, evidence);
+    expect(mismatch.action).toBe("PROMPT");
+    expect(mismatch.violations).toContain("POLICY_VERSION_MISMATCH");
+
+    const impatient = validateDecision(
+      { ...validDecision(), eventType: "SUBSTITUTION" },
+      { ...evidence, pauseBeforeInterventionMs: 100 },
+    );
+    expect(impatient.action).toBe("STAY_SILENT");
+    expect(impatient.violations).toContain("PATIENCE_WINDOW_NOT_MET");
   });
 });
 
