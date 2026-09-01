@@ -53,4 +53,4 @@ The authoritative vertical-slice specification defines S1 as typed contracts, S2
 - [x] Align live audit RLS assertions with the migration’s intentional server-only audit access: authenticated clients must be denied even when actor IDs match.
 - [x] Add a distinct guardian role to the live RLS fixture and enforce/assert role-specific human-review permissions alongside tenant isolation.
 - [x] Prove role-specific denial with a guardian in the same organisation as the decision, alongside the existing cross-organisation guardian check.
-- [ ] Save a fresh checkpoint after the final Supabase pooler migration, live RLS integration tests, and 29-test verification run complete.
+- [x] Save a fresh checkpoint after the final Supabase pooler migration, live RLS integration tests, and 29-test verification run complete.
