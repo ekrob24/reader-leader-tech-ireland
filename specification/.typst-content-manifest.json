@@ -1,0 +1,13 @@
+{
+  "task_kind": "markdown-to-pdf",
+  "output": "pdf",
+  "signals": ["research-report"],
+  "hard_constraints": ["single PDF named Idea_Research.pdf", "three sections", "citations and references"],
+  "content_features": {
+    "code_blocks": 0,
+    "defined_terms": 12,
+    "portrait_images": 0,
+    "tables": 8,
+    "longform_prose": true
+  }
+}

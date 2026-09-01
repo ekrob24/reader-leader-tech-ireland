@@ -1,0 +1,28 @@
+sequenceDiagram
+  actor Child as Child reader
+  participant UI as Reading canvas
+  participant API as Next.js API
+  participant Q as Trigger.dev task
+  participant ASR as Speech / alignment layer
+  participant Agent as Judgement agent
+  participant Policy as Policy guardrails
+  participant DB as Postgres + Storage
+  actor Tutor as Teacher / SET
+
+  Child->>UI: Select approved passage
+  UI->>API: Create session + signed upload URL
+  API->>DB: Record consent, passage, learner context
+  Child->>UI: Read aloud + optional self-flag
+  UI->>DB: Upload audio to private bucket
+  UI->>API: Complete session
+  API->>Q: Trigger idempotent analysis task
+  Q->>ASR: Transcribe / align known text
+  ASR-->>Q: Word timings, phoneme evidence, confidence
+  Q->>Agent: Analyse event candidates
+  Agent->>Policy: Request bounded action
+  Policy-->>Agent: Allow prompt, model, silent, or escalate
+  Agent->>DB: Store trace + running-record event
+  DB-->>Tutor: Realtime record update
+  Tutor->>DB: Inspect audio + override if needed
+  DB-->>Agent: Store labelled correction / override
+  Agent-->>UI: Show child-safe feedback or silence state

@@ -1,0 +1,14 @@
+{
+  "task_kind": "markdown-to-pdf",
+  "output": "pdf",
+  "signals": ["technical-report", "architecture-diagrams"],
+  "hard_constraints": ["single PDF named Development_Plan.pdf", "software stack", "core user flows", "software and network diagrams", "production serverless infrastructure", "agentic AI"],
+  "content_features": {
+    "code_blocks": 1,
+    "defined_terms": 22,
+    "portrait_images": 0,
+    "tables": 14,
+    "longform_prose": true,
+    "landscape_diagrams": 2
+  }
+}

@@ -1,0 +1,41 @@
+flowchart LR
+  subgraph Client[Browser / PWA]
+    Child[Child reading canvas\nMediaRecorder + VAD]
+    Tutor[Tutor / SET dashboard\nreview + override]
+    Admin[School admin\nroster + policy]
+  end
+  CDN[CDN / WAF\nVercel Edge]
+  Auth[Supabase Auth\nOIDC + magic link]
+  API[Next.js App Router\nserver actions + route handlers]
+  DB[(Supabase Postgres\nRLS + audit tables)]
+  Store[(Supabase Storage\nprivate audio/text buckets)]
+  Queue[Trigger.dev\ndurable task queue]
+  Agent[Reader Judgement Agent\nOpenAI Agents SDK]
+  Align[Alignment worker\nSpeechace / Speechmatics + CTC/MFA]
+  Policy[Deterministic policy\nconfidence + accent rules]
+  LLM[LLM reasoning\nstructured JSON only]
+  Notify[Realtime + email\nSupabase Realtime / Resend]
+  Obs[Observability\nSentry + OpenAI traces + audit log]
+
+  Child --> CDN --> API
+  Tutor --> CDN
+  Admin --> CDN
+  API --> Auth
+  API --> DB
+  API --> Store
+  API --> Queue
+  Queue --> Align
+  Align --> Agent
+  Agent --> Policy
+  Agent --> LLM
+  Policy --> DB
+  Agent --> DB
+  Align --> Store
+  DB --> Tutor
+  DB --> Admin
+  DB --> Notify
+  API --> Obs
+  Queue --> Obs
+  Agent --> Obs
+  Policy --> Obs
+  Auth --> DB

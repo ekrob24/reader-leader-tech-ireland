@@ -1,0 +1,13 @@
+{
+  "task_kind": "markdown-to-pdf",
+  "output": "pdf",
+  "signals": ["research-report", "ranking-table"],
+  "hard_constraints": ["single PDF named Methodology_and_Ranked_List.pdf", "win methodology", "ranked table of 11 ideas", "sources"],
+  "content_features": {
+    "code_blocks": 0,
+    "defined_terms": 14,
+    "portrait_images": 0,
+    "tables": 10,
+    "longform_prose": true
+  }
+}
