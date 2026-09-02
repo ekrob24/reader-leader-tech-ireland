@@ -90,4 +90,4 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Verify TypeScript, complete Vitest suite, and browser console show no duplicate-key warning; the post-fix console window is clean.
 - [x] Save a checkpoint containing the verified fix.
 - [x] Add a deterministic navigation regression test asserting dashboard item keys are unique and rerun final verification.
-- [ ] Save a new checkpoint after the duplicate-navigation-key fix and deterministic regression test are complete.
+- [x] Save a new checkpoint after the duplicate-navigation-key fix and deterministic regression test are complete.
