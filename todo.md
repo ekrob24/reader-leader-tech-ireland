@@ -65,7 +65,7 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add Vitest coverage for S7–S8 contracts, behavior, persistence boundaries, metrics, and gates.
 - [x] Enhance the existing UI with polished loading animations, skeleton states, and actionable error handling.
 - [x] Run TypeScript checking, the complete Vitest suite, and browser-level UI verification (42 tests passed across 8 files; final rerun clean).
-- [ ] Save a fresh checkpoint after S7–S8 verification.
+- [x] Save a fresh checkpoint after S7–S8 verification.
 - [x] Fix S7 teacher-briefing evidence-reference deduplication for the project’s TypeScript target.
 - [x] Add the S8 override marker to the validated evaluation-case contract so override-rate metrics remain type-safe.
 - [x] Update live human-review integration fixtures to supply S7 idempotency keys and verify duplicate override rejection.
