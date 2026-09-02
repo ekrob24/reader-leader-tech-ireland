@@ -222,3 +222,10 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add clearly labelled fictitious learner, timeline, and audit fixture records if required by the route.
 - [x] Verify learner-safety access and role-based teacher controls against the mock data.
 - [x] Run relevant tests and save a checkpoint documenting the mock-data boundary.
+
+## Bug fix: learner row contract mapping
+
+- [x] Map Supabase learner rows from snake_case columns to the shared camelCase LearnerRecord contract.
+- [x] Add regression coverage for learner list and selected learner parsing.
+- [x] Run TypeScript, complete Vitest, Playwright, and learner-safety route verification: 50 Vitest tests and 7 Playwright tests pass.
+- [x] Save a checkpoint after verification.

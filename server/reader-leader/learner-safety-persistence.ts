@@ -4,6 +4,15 @@ import { ManusActor, resolveSupabaseUserId } from "./override-persistence";
 
 const teacherRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
 
+export function parseLearnerRow(row: Record<string, unknown>) {
+  return LearnerRecord.parse({
+    id: row.id,
+    displayName: row.display_name ?? row.displayName,
+    safeLabel: row.safe_label ?? row.safeLabel,
+    organisationId: row.organisation_id ?? row.organisationId,
+  });
+}
+
 async function membershipsFor(actor: ManusActor) {
   const userId = await resolveSupabaseUserId(actor);
   const { data, error } = await getSupabaseAdminClient().from("memberships").select("organisation_id, role").eq("user_id", userId);
@@ -16,7 +25,7 @@ async function learnerFor(actor: ManusActor, learnerId: string) {
   const organisationIds = memberships.map(row => row.organisation_id);
   const { data, error } = await getSupabaseAdminClient().from("learners").select("id, display_name, safe_label, organisation_id").eq("id", learnerId).in("organisation_id", organisationIds).single();
   if (error || !data) throw new Error("Learner is not available to this account");
-  return { userId, learner: LearnerRecord.parse(data), memberships };
+  return { userId, learner: parseLearnerRow(data as Record<string, unknown>), memberships };
 }
 
 export async function listLearnersForActor(actor: ManusActor) {
@@ -25,7 +34,7 @@ export async function listLearnersForActor(actor: ManusActor) {
   if (!organisationIds.length) return [];
   const { data, error } = await getSupabaseAdminClient().from("learners").select("id, display_name, safe_label, organisation_id").in("organisation_id", organisationIds).order("display_name");
   if (error) throw new Error("Unable to load learners");
-  return (data ?? []).map(row => LearnerRecord.parse(row));
+  return (data ?? []).map(row => parseLearnerRow(row as Record<string, unknown>));
 }
 
 export async function getLearnerTimelinePage(actor: ManusActor, input: TimelinePageInput): Promise<TimelinePage> {
