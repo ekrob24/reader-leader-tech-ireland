@@ -71,8 +71,8 @@ beforeAll(async () => {
     [ids.userA, ids.organisationA, ids.userB, ids.organisationB, ids.userC],
   );
   await admin.query(
-    `insert into public.learners (id, organisation_id, display_name, pronunciation_set_id)
-     values ($1, $2, 'Fixture learner', 'ie-default')`,
+    `insert into public.learners (id, organisation_id, display_name, pronunciation_set_id, safe_label)
+     values ($1, $2, 'Fixture learner', 'ie-default', 'Fixture learner')`,
     [ids.learnerA, ids.organisationA],
   );
   await admin.query(
@@ -222,5 +222,41 @@ describe("Supabase S2 RLS integration", () => {
         client.query("delete from public.agent_decisions where id = $1", [ids.decisionA]),
       ),
     ).rejects.toThrow();
+  });
+});
+
+
+describe("Supabase learner-safety persistence integration", () => {
+  test("isolates learner timeline and teacher-only audit events", async () => {
+    const safetyDecision = randomUUID();
+    const safetyEvent = randomUUID();
+    await admin.query(
+      `insert into public.learner_safety_decisions (id, learner_id, organisation_id, action, status, summary)
+       values ($1, $2, $3, 'PROMPT', 'PROPOSED', 'Live learner timeline fixture')`,
+      [safetyDecision, ids.learnerA, ids.organisationA],
+    );
+    await admin.query(
+      `insert into public.learner_safety_events (id, learner_id, organisation_id, actor_id, event_type, summary, idempotency_key)
+       values ($1, $2, $3, $4, 'OVERRIDE_CREATED', 'Live teacher audit fixture', $5)`,
+      [safetyEvent, ids.learnerA, ids.organisationA, ids.userA, `live-${safetyEvent}`],
+    );
+    try {
+      const teacherRows = await asUser(ids.userA, async client => ({
+        timeline: (await client.query("select id from public.learner_safety_decisions where id = $1", [safetyDecision])).rows,
+        audit: (await client.query("select id from public.learner_safety_events where id = $1", [safetyEvent])).rows,
+      }));
+      expect(teacherRows.timeline).toHaveLength(1);
+      expect(teacherRows.audit).toHaveLength(1);
+      const guardianRows = await asUser(ids.userB, async client => ({
+        timeline: (await client.query("select id from public.learner_safety_decisions where id = $1", [safetyDecision])).rows,
+        audit: (await client.query("select id from public.learner_safety_events where id = $1", [safetyEvent])).rows,
+      }));
+      expect(guardianRows.timeline).toHaveLength(0);
+      expect(guardianRows.audit).toHaveLength(0);
+      await expect(asUser(ids.userB, client => client.query("insert into public.learner_safety_events (learner_id, organisation_id, actor_id, event_type, summary, idempotency_key) values ($1, $2, $3, 'OVERRIDE_REVERSED', 'Guardian must not write', $4)", [ids.learnerA, ids.organisationA, ids.userB, `blocked-${safetyEvent}`]))).rejects.toThrow();
+    } finally {
+      await admin.query("delete from public.learner_safety_events where id = $1", [safetyEvent]);
+      await admin.query("delete from public.learner_safety_decisions where id = $1", [safetyDecision]);
+    }
   });
 });

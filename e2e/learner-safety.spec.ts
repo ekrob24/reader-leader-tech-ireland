@@ -5,6 +5,8 @@ type Scenario = "success" | "forbidden" | "empty" | "error";
 
 const teacher: User = { id: 1, openId: "teacher-user", name: "Teacher Example", email: "teacher@example.com", role: "admin" };
 const viewer: User = { ...teacher, role: "user", name: "Viewer Example" };
+const learner = { id: "00000000-0000-4000-8000-000000000001", displayName: "Ava Reader", safeLabel: "Ava", organisationId: "00000000-0000-4000-8000-000000000010" };
+const workspaceFor = (canManage: boolean) => ({ learner, canManage, timeline: [{ id: "00000000-0000-4000-8000-000000000011", learnerId: learner.id, action: "PROMPT", status: "OVERRIDDEN", summary: "Prompt suggested after a substitution.", createdAt: "2026-09-02T10:00:00.000Z", overrideId: "00000000-0000-4000-8000-000000000012" }], audit: canManage ? [{ id: "00000000-0000-4000-8000-000000000013", actorId: "00000000-0000-4000-8000-000000000014", learnerId: learner.id, eventType: "OVERRIDE_CREATED", summary: "Teacher reviewed the prompt.", createdAt: "2026-09-02T10:01:00.000Z" }] : [] });
 
 const overviewFor = (role: "teacher" | "viewer") => ({
   role,
@@ -28,6 +30,13 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
     const procedures = (requestUrl.pathname.split("/").pop() ?? "").split(",");
     const results = procedures.map(name => {
       if (name === "auth.me") return { result: { data: { json: user } } };
+      if (name === "learnerSafety.learners") {
+        if (scenario === "empty") return { result: { data: { json: [] } } };
+        return { result: { data: { json: [learner] } } };
+      }
+      if (name === "learnerSafety.workspace") {
+        return { result: { data: { json: workspaceFor(user.role === "admin") } } };
+      }
       if (name === "learnerSafety.overview") {
         if (scenario === "forbidden") return { error: { json: { message: "Learner safety is restricted", code: -32003, data: { code: "FORBIDDEN", httpStatus: 403, path: name } } } };
         if (scenario === "error") return { error: { json: { message: "Safety service unavailable", code: -32603, data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 500, path: name } } } };
@@ -48,6 +57,8 @@ async function openLearnerSafety(page: Page) {
 }
 
 test("unauthenticated learner safety access requires sign in", async ({ page }) => {
+  let oauthUrl = "";
+  page.on("request", request => { if (request.url().includes("/app-auth")) oauthUrl = request.url(); });
   await page.route("**/api/trpc/**", async route => {
     const requestUrl = new URL(route.request().url());
     const procedures = (requestUrl.pathname.split("/").pop() ?? "").split(",");
@@ -59,7 +70,7 @@ test("unauthenticated learner safety access requires sign in", async ({ page }) 
     await route.continue();
   });
   await page.goto("/learner-safety");
-  await expect(page).toHaveURL(/manus\.im\/app-auth/);
+  await expect.poll(() => oauthUrl).toContain("/app-auth");
 });
 
 test.describe("authenticated learner safety navigation", () => {
@@ -70,7 +81,17 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Teacher controls", { exact: true })).toBeVisible();
     await expect(page.getByText("Child-safe view", { exact: true })).toBeVisible();
     await expect(page.getByText("Admin / teacher", { exact: true })).toBeVisible();
-    await expect(page.getByText("Append a reasoned override", { exact: true })).toBeVisible();
+    await expect(page.getByText("Reverse an override", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Append reversal event" }).click();
+    await expect(page.getByRole("status")).toContainText("Reversal appended to the audit history.");
+    await expect(page.getByLabel("Selected learner")).toHaveValue(learner.id);
+    await expect(page.getByText("Decision timeline", { exact: true })).toBeVisible();
+    await expect(page.getByText("Prompt suggested after a substitution.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Teacher audit history", { exact: true })).toBeVisible();
+    await expect(page.getByText("Progress", { exact: true })).toBeVisible();
+    await expect(page.getByText("1 of 3", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Continue gently" }).click();
+    await expect(page.getByText("2 of 3", { exact: true })).toBeVisible();
     await expect(page.getByText("Enabled", { exact: true }).first()).toBeVisible();
   });
 
@@ -81,6 +102,10 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Read only", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Approved projection", { exact: true })).toBeVisible();
     await expect(page.getByText("A calm next step", { exact: true })).toBeVisible();
+    await expect(page.getByText("Decision timeline", { exact: true })).toBeVisible();
+    await expect(page.getByText("Teacher audit history", { exact: true })).not.toBeVisible();
+    await expect(page.getByText("Read only", { exact: true }).nth(1)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Append reversal event" })).toHaveCount(0);
   });
 
   test("denied access is explicit and does not render learner content", async ({ page }) => {

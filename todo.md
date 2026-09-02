@@ -130,3 +130,24 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add Playwright coverage for unauthenticated learner-safety behavior and narrow the verification note to evidence-backed assertions.
 - [x] Update unauthenticated Playwright coverage to assert the existing Manus OAuth redirect rather than an in-page sign-in heading.
 - [x] Narrow the learner-safety verification note to only evidence-backed Playwright results: OAuth redirect, teacher/viewer routing, forbidden state, and empty state.
+
+## Learner safety persistence and child progress
+
+- [x] Re-read full-stack guidance and inspect existing learner-safety, schema, Supabase, and test files.
+- [x] Define Zod contracts for learners, selected learner context, decision timeline, audit history, and override reversal events.
+- [x] Add persisted learner selection and protected learner-scoped timeline procedures.
+- [x] Add teacher-only audit history and append-only reversal framework for overrides.
+- [x] Enhance child-safe view with interactive visual feedback and progress indicators.
+- [x] Add Vitest, Supabase integration, and Playwright coverage for the new flows.
+- [x] Run TypeScript, complete Vitest, Playwright, and browser verification.
+- [x] Save a checkpoint after verification.
+- [x] Update learner-safety Playwright teacher assertion for the new “Reverse an override” control label and rerun persistence-flow verification.
+- [x] Update the live Supabase learner fixture to provide `safe_label` after the learner-safety migration made it required.
+- [x] Extend Playwright coverage for learner selection, persisted decision timeline, teacher audit history, reversible override controls, and interactive child progress.
+- [x] Update Playwright timeline and audit assertions to use rendered text selectors because the shared CardTitle component does not expose semantic heading roles in this page.
+- [x] Make unauthenticated Playwright coverage assert the actual `/app-auth` OAuth request emitted by `startLogin`, which is more reliable than waiting on an external URL.
+- [x] Tighten ChildProgress validation so progress steps cannot exceed total and completion state remains consistent with the displayed indicator.
+- [x] Execute the reverse-override Playwright flow and assert authorised teacher success plus non-manager denial/read-only behavior.
+- [x] Save a fresh checkpoint containing the learner-safety persistence, actor-link migration, live integration, and final verification changes.
+- [x] Execute the teacher reversal control in Playwright and assert the append-only success status, then rerun all checks.
+- [x] Assert in Playwright that viewer/non-manager users cannot execute or see the append-only reversal control while teachers can.
