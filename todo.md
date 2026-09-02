@@ -91,3 +91,10 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Save a checkpoint containing the verified fix.
 - [x] Add a deterministic navigation regression test asserting dashboard item keys are unique and rerun final verification.
 - [x] Save a new checkpoint after the duplicate-navigation-key fix and deterministic regression test are complete.
+
+## Investigation: recurring duplicate navigation key warning
+
+- [x] Re-trace all rendered navigation/list key expressions and identify any remaining `/` key source; current dashboard navigation renders `key={item.id}` with unique IDs.
+- [x] Compare current source, built client output, HMR state, and browser-console timestamps to determine whether the warning is stale or emitted by another component; recorded `/` warnings predate the fix and no post-fix warning was found.
+- [x] Record the next incomplete implementation work and recommended remediation path; no incomplete implementation items remain in todo.md, and the next practical work is authenticated end-to-end QA plus product follow-through.
+- [x] Inspect the production build output for duplicate navigation-key code and narrow the warning conclusion if the build artifact is unavailable; build succeeded, obsolete key pattern matches are zero, and current IDs are present.
