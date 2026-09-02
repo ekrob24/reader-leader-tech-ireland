@@ -300,3 +300,13 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add Vitest and Playwright coverage for demo mode, filtering, status indicators, and trace timeline behavior.
 - [x] Run TypeScript, the full test suites, and desktop/mobile visual verification: 70 Vitest tests and 10 Playwright tests pass.
 - [x] Document the presentation controls and save a checkpoint.
+
+## Hackathon presentation controls: reset, guided tour, and trace export
+
+- [x] Inspect mock-session persistence, existing export patterns, and session-demo UI controls.
+- [x] Add protected synthetic-session reset and privacy-safe trace-export contracts and services.
+- [x] Build a one-click reset control with confirmation and clear synthetic-only scope.
+- [x] Build a judge-facing guided tour overlay for consent gating, content approval, and safe analysis traces.
+- [x] Add a trace-summary download that excludes learner names, file data, and other identifying information.
+- [x] Add unit and Playwright coverage; run TypeScript, full tests, and responsive visual verification: 72 Vitest tests and 10 Playwright tests pass.
+- [x] Document the presentation controls and save a checkpoint.

@@ -75,6 +75,7 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       if (name === "contentWorkflow.overview") return { result: { data: { json: contentOverview } } };
       if (name.startsWith("contentWorkflow.")) return { result: { data: { json: contentOverview.reviewQueue[0] } } };
       if (name === "hackathonDemo.summary") return { result: { data: { json: hackathonDemoSummary } } };
+      if (name === "hackathonDemo.resetSyntheticSessions") return { result: { data: { json: { deletedSessions: 1 } } } };
       if (name.startsWith("hackathonDemo.")) return { result: { data: { json: hackathonDemoSummary.sessions[0] } } };
       if (name === "readerLeader.preview") return { result: { data: { json: null } } };
       return { result: { data: { json: null } } };
@@ -175,6 +176,19 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Synthetic file preset", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Session consent checked/i }).click();
     await expect(page.getByText("Active guardian consent was verified before mock processing.", { exact: true })).toBeVisible();
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download safe trace" }).click();
+    expect((await download).suggestedFilename()).toBe("reader-leader-synthetic-safety-trace.json");
+    await page.getByRole("button", { name: "Judge tour" }).click();
+    await expect(page.getByRole("dialog", { name: "Judge guided tour" })).toBeVisible();
+    await expect(page.getByText("1. Content is approved first", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.getByText("2. Consent gates the session", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Close tour" }).click();
+    await page.getByRole("button", { name: "Reset synthetic sessions" }).click();
+    await expect(page.getByRole("alertdialog", { name: "Reset synthetic demo sessions?" })).toBeVisible();
+    await expect(page.getByText(/removes only sessions tagged as synthetic demo records/i)).toBeVisible();
+    await page.getByRole("button", { name: "Keep sessions" }).click();
   });
 
   test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {

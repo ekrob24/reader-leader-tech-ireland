@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CreateHackathonSessionInput, HackathonSessionRecord, RecordMockUploadInput } from "@shared/hackathon-session-demo";
+import { createPrivacySafeTraceSummary, CreateHackathonSessionInput, HackathonSessionRecord, RecordMockUploadInput, ResetHackathonDemoInput } from "@shared/hackathon-session-demo";
 import { hasActiveAssessmentConsent } from "./reader-leader/hackathon-session-demo";
 
 const learnerId = "11111111-1111-4111-8111-111111111111";
@@ -27,5 +27,22 @@ describe("hackathon session demo contracts", () => {
       traces: [{ id: "77777777-7777-4777-8777-777777777777", traceId: "66666666-6666-4666-8666-666666666666", sessionId, stage: "ANALYSIS_QUEUED", safeSummary: "Deterministic mock analysis was queued for adult review.", createdAt: "2026-09-03T12:00:00.000Z" }],
     });
     expect(session.traces[0]?.safeSummary).toContain("adult review");
+  });
+
+  it("exports only a privacy-safe synthetic trace summary", () => {
+    const session = HackathonSessionRecord.parse({
+      id: sessionId, learnerId, passageId, organisationId: "44444444-4444-4444-8444-444444444444", sessionStatus: "READY", uploadStatus: "UPLOADED", consentStatus: "ACTIVE", mayProcessData: true,
+      job: { id: "55555555-5555-4555-8555-555555555555", status: "READY", attemptCount: 0, traceId: "66666666-6666-4666-8666-666666666666" },
+      traces: [{ id: "77777777-7777-4777-8777-777777777777", traceId: "66666666-6666-4666-8666-666666666666", sessionId, stage: "ANALYSIS_READY", safeSummary: "Mock analysis is ready for adult review.", createdAt: "2026-09-03T12:00:00.000Z" }],
+    });
+    const exported = createPrivacySafeTraceSummary(session, "2026-09-03T12:30:00.000Z");
+    expect(exported).toMatchObject({ classification: "SYNTHETIC_HACKATHON_DEMO_ONLY", consentGate: "ACTIVE", completedStages: ["ANALYSIS_READY"] });
+    expect(JSON.stringify(exported)).not.toContain(learnerId);
+    expect(JSON.stringify(exported)).not.toContain(passageId);
+  });
+
+  it("requires an explicit synthetic-only confirmation before a reset operation", () => {
+    expect(ResetHackathonDemoInput.parse({ organisationId: "44444444-4444-4444-8444-444444444444", confirmation: "RESET_SYNTHETIC_SESSIONS" })).toBeTruthy();
+    expect(() => ResetHackathonDemoInput.parse({ organisationId: "44444444-4444-4444-8444-444444444444", confirmation: "RESET" })).toThrow();
   });
 });

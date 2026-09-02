@@ -28,6 +28,13 @@ export type RunMockAnalysisInput = z.infer<typeof RunMockAnalysisInput>;
 export const RetryMockAnalysisInput = z.object({ jobId: DemoId, idempotencyKey });
 export type RetryMockAnalysisInput = z.infer<typeof RetryMockAnalysisInput>;
 export const HackathonSessionIdInput = z.object({ sessionId: DemoId });
+export const ResetHackathonDemoInput = z.object({
+  organisationId: DemoId,
+  confirmation: z.literal("RESET_SYNTHETIC_SESSIONS"),
+});
+export type ResetHackathonDemoInput = z.infer<typeof ResetHackathonDemoInput>;
+export const ResetHackathonDemoResult = z.object({ deletedSessions: z.number().int().nonnegative() });
+export type ResetHackathonDemoResult = z.infer<typeof ResetHackathonDemoResult>;
 
 export const MockTraceEvent = z.object({
   id: DemoId,
@@ -61,3 +68,28 @@ export const HackathonDemoSummary = z.object({
   queuedOrRunningJobCount: z.number().int().nonnegative(),
 });
 export type HackathonDemoSummary = z.infer<typeof HackathonDemoSummary>;
+
+export const PrivacySafeTraceSummary = z.object({
+  reportTitle: z.literal("Reader Leader — Mock analysis safety trace"),
+  classification: z.literal("SYNTHETIC_HACKATHON_DEMO_ONLY"),
+  generatedAt: z.string().datetime(),
+  consentGate: z.enum(["ACTIVE", "BLOCKED"]),
+  sessionStatus: HackathonSessionRecord.shape.sessionStatus,
+  jobStatus: MockAnalysisJobStatus.nullable(),
+  completedStages: z.array(MockTraceStage),
+  traceEntries: z.array(z.object({ stage: MockTraceStage, safeSummary: z.string().trim().min(1).max(280) })),
+});
+export type PrivacySafeTraceSummary = z.infer<typeof PrivacySafeTraceSummary>;
+
+export function createPrivacySafeTraceSummary(session: HackathonSessionRecord, generatedAt = new Date().toISOString()): PrivacySafeTraceSummary {
+  return PrivacySafeTraceSummary.parse({
+    reportTitle: "Reader Leader — Mock analysis safety trace",
+    classification: "SYNTHETIC_HACKATHON_DEMO_ONLY",
+    generatedAt,
+    consentGate: session.mayProcessData ? "ACTIVE" : "BLOCKED",
+    sessionStatus: session.sessionStatus,
+    jobStatus: session.job?.status ?? null,
+    completedStages: session.traces.map(trace => trace.stage),
+    traceEntries: session.traces.map(trace => ({ stage: trace.stage, safeSummary: trace.safeSummary })),
+  });
+}

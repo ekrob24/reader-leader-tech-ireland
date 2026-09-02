@@ -2,12 +2,14 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
-import { AlertTriangle, CheckCircle2, ChevronRight, Clock3, FileAudio, Loader2, PlayCircle, ShieldCheck, UploadCloud } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Clock3, Download, FileAudio, Loader2, PlayCircle, Presentation, RotateCcw, ShieldCheck, UploadCloud } from "lucide-react";
+import { createPrivacySafeTraceSummary } from "@shared/hackathon-session-demo";
 import { useEffect, useMemo, useState } from "react";
 
 const emptyId = "00000000-0000-4000-8000-000000000000";
@@ -30,6 +32,7 @@ export default function SessionDemo() {
   const [file, setFile] = useState<File>();
   const [demoMode, setDemoMode] = useState(false);
   const [activeTraceStage, setActiveTraceStage] = useState<string>();
+  const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => { if (!organisationId && organisations.data?.[0]) setOrganisationId(organisations.data[0].id); }, [organisationId, organisations.data]);
   const contentInput = useMemo(() => ({ organisationId: organisationId ?? emptyId }), [organisationId]);
   const content = trpc.contentWorkflow.overview.useQuery(contentInput, { enabled: Boolean(organisationId) });
@@ -44,10 +47,11 @@ export default function SessionDemo() {
   const create = trpc.hackathonDemo.createSession.useMutation({ onSuccess: record => { setSelectedSessionId(record.id); summary.refetch(); } });
   const upload = trpc.hackathonDemo.recordMockUpload.useMutation({ onSuccess: record => { setSelectedSessionId(record.id); summary.refetch(); } });
   const run = trpc.hackathonDemo.runMockAnalysis.useMutation({ onSuccess: record => { setSelectedSessionId(record.id); summary.refetch(); } });
+  const reset = trpc.hackathonDemo.resetSyntheticSessions.useMutation({ onSuccess: () => { setSelectedSessionId(undefined); setActiveTraceStage(undefined); summary.refetch(); } });
   const current = summary.data?.sessions.find(session => session.id === selectedSessionId) ?? summary.data?.sessions[0];
   const selectedTrace = current?.traces.find(trace => trace.stage === activeTraceStage) ?? current?.traces.at(-1);
-  const busy = create.isPending || upload.isPending || run.isPending;
-  const error = [create, upload, run].find(action => action.isError)?.error?.message;
+  const busy = create.isPending || upload.isPending || run.isPending || reset.isPending;
+  const error = [create, upload, run, reset].find(action => action.isError)?.error?.message;
   const canRecordMockUpload = Boolean(current && current.uploadStatus === "NOT_STARTED" && (file || demoMode));
   const submitMockUpload = () => {
     if (!current) return;
@@ -66,6 +70,8 @@ export default function SessionDemo() {
       {current ? <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]"><Card className="rounded-2xl border-[#dfe4de] bg-white shadow-sm"><CardHeader><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#78918b]">Step 2</p><CardTitle className="mt-2 flex items-center gap-2 text-xl"><UploadCloud className="h-5 w-5 text-[#4f836f]" /> Mock upload metadata</CardTitle></CardHeader><CardContent className="space-y-4"><div className="flex flex-wrap gap-2"><Status value={current.consentStatus} /><Status value={current.sessionStatus} /><Status value={current.uploadStatus} /></div>{demoMode ? <div className="rounded-xl border border-dashed border-[#d6e3d3] bg-[#f7f8f4] p-3 text-sm text-[#526966]"><strong>Synthetic file preset</strong><br />{syntheticUpload.fileName} · {(syntheticUpload.byteSize / 1000).toFixed(0)} KB · audio/webm</div> : <Input aria-label="Mock audio file" type="file" accept="audio/webm,audio/wav" onChange={event => setFile(event.target.files?.[0])} disabled={busy || current.uploadStatus !== "NOT_STARTED"} />}<p className="text-xs leading-5 text-[#71847f]">The chosen filename, media type, and file size are shown in the demo state. Audio bytes are never uploaded or retained.</p><Button className="w-full gap-2 bg-[#183237] text-white hover:bg-[#24484d]" disabled={!canRecordMockUpload || busy || current.uploadStatus !== "NOT_STARTED"} onClick={submitMockUpload}>{upload.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileAudio className="h-4 w-4" />}{demoMode ? "Record synthetic mock upload" : "Record mock upload"}</Button><Button variant="outline" className="w-full gap-2 border-[#cadbd1] bg-white" disabled={busy || !current.mayProcessData || current.uploadStatus !== "UPLOADED" || current.job?.status !== "QUEUED"} onClick={() => run.mutate({ sessionId: current.id, idempotencyKey: `mock-analysis-${current.id}` })}>{run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />} Run deterministic mock analysis</Button></CardContent></Card>
         <TraceTimeline current={current} activeStage={activeTraceStage} onSelect={setActiveTraceStage} selectedTrace={selectedTrace} /></section> : <Card className="rounded-2xl border-dashed border-[#d6e3d3] bg-[#fbfcf8]"><CardContent className="flex min-h-40 flex-col items-center justify-center gap-3 p-6 text-center"><FileAudio className="h-6 w-6 text-[#6e8a82]" /><p className="text-sm leading-6 text-[#71847f]">Create a consent-gated mock session to display its upload state and safe trace.</p></CardContent></Card>}
       {error ? <p role="alert" className="rounded-xl border border-[#e8c9c0] bg-[#fff0eb] p-3 text-sm text-[#a44e3b]"><AlertTriangle className="mr-2 inline h-4 w-4" />{error}</p> : null}
+      <PresentationControls current={current} organisationId={organisationId} busy={busy} resetPending={reset.isPending} onReset={() => organisationId && reset.mutate({ organisationId, confirmation: "RESET_SYNTHETIC_SESSIONS" })} onTour={() => setTourOpen(true)} />
+      <JudgeTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </>}
   </div></main></DashboardLayout>;
 }
@@ -73,6 +79,28 @@ export default function SessionDemo() {
 function TraceTimeline({ current, activeStage, onSelect, selectedTrace }: { current: { job: { status: string; attemptCount: number } | null; traces: Array<{ id: string; stage: string; safeSummary: string; createdAt: string }> }; activeStage: string | undefined; onSelect: (stage: string) => void; selectedTrace: { stage: string; safeSummary: string; createdAt: string } | undefined }) {
   const complete = traceStages.filter(stage => current.traces.some(trace => trace.stage === stage));
   return <Card className="rounded-2xl border-[#dfe4de] bg-white shadow-sm"><CardHeader><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#78918b]">Step 3</p><CardTitle className="mt-2 flex items-center gap-2 text-xl"><CheckCircle2 className="h-5 w-5 text-[#4f836f]" /> Interactive safe trace</CardTitle></CardHeader><CardContent className="space-y-4">{current.job ? <div className="flex items-center justify-between rounded-xl bg-[#f7f8f4] p-3"><span className="text-sm font-medium">Mock analysis · attempt {current.job.attemptCount + 1}</span><Status value={current.job.status} /></div> : null}<div><div className="mb-2 flex justify-between text-xs text-[#71847f]"><span>Trace completion</span><span>{complete.length} of {traceStages.length} stages</span></div><Progress value={(complete.length / traceStages.length) * 100} className="h-2 bg-[#d9e6d5] [&>div]:bg-[#669b71]" /></div><ol aria-label="Mock analysis trace timeline" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{traceStages.map((stage, index) => { const trace = current.traces.find(item => item.stage === stage); const active = activeStage === stage || (!activeStage && trace?.stage === selectedTrace?.stage); return <li key={stage}><button type="button" disabled={!trace} aria-pressed={active} onClick={() => trace && onSelect(stage)} className={`group flex w-full items-center gap-2 rounded-xl border p-2.5 text-left transition ${trace ? "border-[#cadbd1] bg-[#fbfcf8] hover:bg-[#eff6ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f836f]" : "cursor-not-allowed border-[#e8ece6] bg-[#fafbf9] text-[#aab6b1]"} ${active ? "ring-2 ring-[#78a992]" : ""}`}><span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${trace ? "bg-[#4f836f] text-white" : "bg-[#e5eae5] text-[#7f918b]"}`}>{trace ? "✓" : index + 1}</span><span className="text-[11px] font-semibold leading-4">{stage.replaceAll("_", " ")}</span></button></li>; })}</ol>{selectedTrace ? <div className="rounded-xl border border-[#d6e3d3] bg-[#f0f6ee] p-4"><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#5e7d70]">{selectedTrace.stage.replaceAll("_", " ")}</p><p className="mt-2 text-sm leading-6 text-[#3f6157]">{selectedTrace.safeSummary}</p><time className="mt-2 flex items-center gap-1 text-xs text-[#69827a]"><ChevronRight className="h-3 w-3" /> {new Date(selectedTrace.createdAt).toLocaleString()}</time></div> : <p className="rounded-xl border border-dashed border-[#dfe4de] p-4 text-sm text-[#71847f]">Record a mock upload to queue an auditable analysis trace.</p>}</CardContent></Card>;
+}
+function PresentationControls({ current, organisationId, busy, resetPending, onReset, onTour }: { current: Parameters<typeof createPrivacySafeTraceSummary>[0] | undefined; organisationId: string | undefined; busy: boolean; resetPending: boolean; onReset: () => void; onTour: () => void }) {
+  const downloadSummary = () => {
+    if (!current) return;
+    const summary = createPrivacySafeTraceSummary(current);
+    const file = new Blob([JSON.stringify(summary, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(file); const link = document.createElement("a");
+    link.href = url; link.download = "reader-leader-synthetic-safety-trace.json"; link.click(); URL.revokeObjectURL(url);
+  };
+  return <aside aria-label="Presentation controls" className="sticky bottom-3 z-20 flex flex-wrap justify-end gap-2 rounded-2xl border border-[#d6e3d3] bg-white/95 p-3 shadow-lg backdrop-blur"><Button type="button" size="sm" variant="outline" className="gap-2 border-[#cadbd1] bg-white" onClick={onTour}><Presentation className="h-4 w-4" /> Judge tour</Button><Button type="button" size="sm" variant="outline" className="gap-2 border-[#cadbd1] bg-white" disabled={!current} onClick={downloadSummary}><Download className="h-4 w-4" /> Download safe trace</Button><AlertDialog><AlertDialogTrigger asChild><Button type="button" size="sm" variant="outline" className="gap-2 border-[#e8c9c0] bg-[#fffaf8] text-[#a44e3b] hover:bg-[#fff0eb]" disabled={!organisationId || busy}><RotateCcw className="h-4 w-4" /> Reset synthetic sessions</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Reset synthetic demo sessions?</AlertDialogTitle><AlertDialogDescription>This removes only sessions tagged as synthetic demo records, including their mock upload metadata, jobs, and safe traces. It never alters consent, approved passages, or audit history.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep sessions</AlertDialogCancel><AlertDialogAction className="bg-[#a44e3b] text-white hover:bg-[#873c2d]" onClick={onReset}>{resetPending ? "Resetting…" : "Reset synthetic sessions"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></aside>;
+}
+function JudgeTour({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [step, setStep] = useState(0);
+  useEffect(() => { if (!open) setStep(0); }, [open]);
+  if (!open) return null;
+  const steps = [
+    ["1. Content is approved first", "In Content workflow, independent rights and safety gates must pass before teachers can select a passage."],
+    ["2. Consent gates the session", "The session service rejects creation or upload state without an active, unexpired guardian consent."],
+    ["3. The demo does not collect audio", "Demo Mode selects synthetic values and sends metadata only. No recording, transcript, or child metric is captured."],
+    ["4. Adults can inspect the trace", "The safety dashboard preserves a bounded analysis trace and keeps final review authority with adults."],
+  ];
+  return <div role="dialog" aria-modal="true" aria-label="Judge guided tour" className="fixed inset-0 z-50 flex items-end bg-[#183237]/45 p-4 sm:items-center sm:justify-center"><section className="w-full max-w-lg rounded-3xl border border-[#d6e3d3] bg-[#fbfcf8] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#66847d]">Judge guided tour · {step + 1} of {steps.length}</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#183237]">{steps[step]?.[0]}</h2><p className="mt-3 text-sm leading-7 text-[#566f69]">{steps[step]?.[1]}</p><div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[#dce6dc]"><div className="h-full rounded-full bg-[#5d9971] transition-[width] duration-200" style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div><div className="mt-6 flex justify-between gap-3"><Button type="button" variant="ghost" onClick={onClose}>Close tour</Button>{step + 1 < steps.length ? <Button type="button" className="gap-2 bg-[#183237] text-white hover:bg-[#24484d]" onClick={() => setStep(current => current + 1)}>Next <ChevronRight className="h-4 w-4" /></Button> : <Button type="button" className="bg-[#183237] text-white hover:bg-[#24484d]" onClick={onClose}>Start demonstration</Button>}</div></section></div>;
 }
 function Status({ value }: { value: string }) { return <Badge className={`border ${statusTone[value] ?? statusTone.CREATED} hover:opacity-100`}>{value.replaceAll("_", " ")}</Badge>; }
 function Metric({ label, value }: { label: string; value: number }) { return <div className="rounded-xl border border-[#d6e3d3] bg-white/75 p-4"><p className="text-2xl font-semibold">{value}</p><p className="mt-1 text-xs text-[#71847f]">{label}</p></div>; }

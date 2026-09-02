@@ -4,6 +4,8 @@ import {
   HackathonSessionRecord,
   MockTraceEvent,
   RecordMockUploadInput,
+  ResetHackathonDemoInput,
+  ResetHackathonDemoResult,
   RetryMockAnalysisInput,
   RunMockAnalysisInput,
 } from "@shared/hackathon-session-demo";
@@ -11,6 +13,7 @@ import { getSupabaseAdminClient } from "../supabase";
 import { ManusActor, resolveSupabaseUserId } from "./override-persistence";
 
 const sessionRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
+const resetRoles = new Set(["school_admin", "literacy_lead"]);
 type Membership = { user_id: string; organisation_id: string; role: string };
 type SessionRow = { id: string; learner_id: string; passage_id: string; organisation_id: string; status: "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED" };
 type JobRow = { id: string; session_id: string; status: "QUEUED" | "RUNNING" | "READY" | "FAILED" | "RETRYING" | "BLOCKED"; attempt_count: number; trace_id: string };
@@ -72,7 +75,7 @@ export async function createHackathonSession(actor: ManusActor, input: CreateHac
   await activeConsentFor(input.learnerId);
   const { data: passage, error: passageError } = await getSupabaseAdminClient().from("passages").select("id").eq("id", input.passageId).eq("organisation_id", learner.organisation_id).eq("approval_status", "APPROVED").maybeSingle();
   if (passageError || !passage) throw new Error("Select an approved passage from this learner’s organisation");
-  const { data, error } = await getSupabaseAdminClient().from("reading_sessions").insert({ organisation_id: learner.organisation_id, learner_id: input.learnerId, passage_id: input.passageId, status: "CREATED", idempotency_key: input.idempotencyKey }).select("id, learner_id, passage_id, organisation_id, status").single();
+  const { data, error } = await getSupabaseAdminClient().from("reading_sessions").insert({ organisation_id: learner.organisation_id, learner_id: input.learnerId, passage_id: input.passageId, status: "CREATED", demo_mode: true, idempotency_key: input.idempotencyKey }).select("id, learner_id, passage_id, organisation_id, status").single();
   if (error || !data) throw new Error(error?.code === "23505" ? "Session idempotency key has already been used" : "Unable to create a consent-gated session");
   return buildSessionRecord(data as SessionRow);
 }
@@ -138,4 +141,12 @@ export async function getHackathonDemoSummary(actor: ManusActor, organisationId:
 
 export async function getHackathonSession(actor: ManusActor, sessionId: string) {
   return buildSessionRecord(await sessionForStaff(actor, sessionId));
+}
+
+export async function resetHackathonDemoSessions(actor: ManusActor, input: ResetHackathonDemoInput) {
+  const membership = await staffForOrganisation(actor, input.organisationId);
+  if (!resetRoles.has(membership.role)) throw new Error("Only a school lead may reset synthetic demo sessions");
+  const { data, error } = await getSupabaseAdminClient().from("reading_sessions").delete().eq("organisation_id", input.organisationId).eq("demo_mode", true).select("id");
+  if (error) throw new Error("Unable to reset synthetic demo sessions");
+  return ResetHackathonDemoResult.parse({ deletedSessions: data?.length ?? 0 });
 }

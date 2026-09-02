@@ -124,9 +124,9 @@ export interface Database {
         Relationships: NoRelationships;
       };
       reading_sessions: {
-        Row: { id: string; organisation_id: string; learner_id: string; passage_id: string; status: SessionStatus; idempotency_key: string; started_at: string | null; completed_at: string | null; created_at: string };
-        Insert: { id?: string; organisation_id: string; learner_id: string; passage_id: string; status?: SessionStatus; idempotency_key: string; started_at?: string | null; completed_at?: string | null; created_at?: string };
-        Update: { id?: string; organisation_id?: string; learner_id?: string; passage_id?: string; status?: SessionStatus; idempotency_key?: string; started_at?: string | null; completed_at?: string | null; created_at?: string };
+        Row: { id: string; organisation_id: string; learner_id: string; passage_id: string; status: SessionStatus; idempotency_key: string; demo_mode: boolean; started_at: string | null; completed_at: string | null; created_at: string };
+        Insert: { id?: string; organisation_id: string; learner_id: string; passage_id: string; status?: SessionStatus; idempotency_key: string; demo_mode?: boolean; started_at?: string | null; completed_at?: string | null; created_at?: string };
+        Update: { id?: string; organisation_id?: string; learner_id?: string; passage_id?: string; status?: SessionStatus; idempotency_key?: string; demo_mode?: boolean; started_at?: string | null; completed_at?: string | null; created_at?: string };
         Relationships: NoRelationships;
       };
       evidence_bundles: {
