@@ -21,6 +21,7 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 | Priority 1 consent lifecycle | Complete foundation | Guardian-to-learner authorisation, append-only consent withdrawal, retention eligibility, deletion inventory, receipts, lifecycle audit, and live synthetic-data verification. |
 | Private storage lifecycle | Complete access-revocation foundation | Pseudonymous managed-storage keys, hash-only protected inventory, fail-closed verification, key revocation, receipts, and lifecycle audit; physical provider deletion remains a later prerequisite. |
 | Content approval and selection | Complete | Adult Content workflow UI, role-derived content-steward review actions, append-only review audit, approval prerequisites, and teacher approved-only selection enforced by RLS. |
+| Hackathon session demonstration | Complete, mock-only | Consent-gated session creation, metadata-only mock upload, persisted job states, deterministic safe traces, and adult dashboard; no audio bytes, transcription, or automated worker execution. |
 
 ## Current technical boundaries
 
@@ -35,10 +36,10 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 
 ## Next work, in priority order
 
-1. **Consent-gated audio/session slice:** Add the browser upload/session path, physical-object deletion or lifecycle policy, and the production deletion executor using synthetic or consented staging data only.
-2. **Durable analysis and observability:** Introduce idempotent background tasks, correlated telemetry, alerting, and a dead-letter/retry process; keep the policy gate as final authority.
+1. **Production audio/session slice:** Replace mock upload metadata with a consent-checked binary-upload path and a provider-backed physical-object deletion or lifecycle policy, using only synthetic or consented staging data.
+2. **Durable analysis and observability:** Replace manual mock runs with deployed idempotent background tasks, correlated telemetry, alerting, and a dead-letter/retry process; keep the policy gate as final authority.
 3. **Pilot readiness:** Add backup-restoration verification, DPIA and operational runbooks, school onboarding/invites, staging/production separation, and supervised usability testing with literacy and safeguarding experts.
 
 ## Verification baseline
 
-The current verified baseline is clean TypeScript checking, **66 Vitest tests**, **9 Playwright tests**, and assertion-backed authenticated browser routes for learner safety and content workflow. The test suite includes live two-organisation RLS checks, row-normalization tests, contract-boundary log redaction checks, guardian lifecycle/RLS checks, withdrawal/deletion trigger checks, key-revocation receipt verification, content-review RLS tests, approved-passage selection tests, and safe error-state coverage. The direct preview endpoint is unauthenticated and therefore displays its protected-route loading state; authenticated browser behaviour is the assertion-backed E2E baseline.
+The current verified baseline is clean TypeScript checking, **69 Vitest tests**, **10 Playwright tests**, and assertion-backed authenticated browser routes for learner safety, content workflow, and session demo. The test suite includes live two-organisation RLS checks, row-normalization tests, contract-boundary log redaction checks, guardian lifecycle/RLS checks, withdrawal/deletion trigger checks, key-revocation receipt verification, content-review RLS tests, approved-passage selection tests, consent-gate contracts, mock-upload metadata validation, and safe error-state coverage. The direct preview endpoint is unauthenticated and therefore displays its protected-route loading state; authenticated browser behaviour is the assertion-backed E2E baseline.

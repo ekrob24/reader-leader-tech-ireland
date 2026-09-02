@@ -19,6 +19,8 @@ import { RecordGuardianConsentInput, RequestDataDeletionInput, WithdrawGuardianC
 import { getDeletionStatus, getRetentionEligibility, recordGuardianConsent, requestDataDeletion, withdrawGuardianConsent } from "./reader-leader/consent-lifecycle";
 import { ApprovePassageInput, ContentOrganisationInput, CreatePassageDraftInput, RetirePassageInput, SetPassageRightsInput, SetPassageSafetyInput } from "@shared/content-workflow";
 import { approvePassage, createPassageDraft, getContentWorkflowOverview, listContentOrganisations, retirePassage, setPassageRights, setPassageSafety } from "./reader-leader/content-workflow";
+import { CreateHackathonSessionInput, HackathonSessionIdInput, RecordMockUploadInput, RetryMockAnalysisInput, RunMockAnalysisInput } from "@shared/hackathon-session-demo";
+import { createHackathonSession, getHackathonDemoSummary, getHackathonSession, recordMockUpload, retryMockAnalysis, runMockAnalysis } from "./reader-leader/hackathon-session-demo";
 
 async function readLearnerSafetyData<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -67,6 +69,14 @@ export const appRouter = router({
     setSafety: protectedProcedure.input(SetPassageSafetyInput).mutation(({ ctx, input }) => setPassageSafety(ctx.user, input)),
     approve: protectedProcedure.input(ApprovePassageInput).mutation(({ ctx, input }) => approvePassage(ctx.user, input)),
     retire: protectedProcedure.input(RetirePassageInput).mutation(({ ctx, input }) => retirePassage(ctx.user, input)),
+  }),
+  hackathonDemo: router({
+    summary: protectedProcedure.input(ContentOrganisationInput).query(({ ctx, input }) => getHackathonDemoSummary(ctx.user, input.organisationId)),
+    createSession: protectedProcedure.input(CreateHackathonSessionInput).mutation(({ ctx, input }) => createHackathonSession(ctx.user, input)),
+    recordMockUpload: protectedProcedure.input(RecordMockUploadInput).mutation(({ ctx, input }) => recordMockUpload(ctx.user, input)),
+    runMockAnalysis: protectedProcedure.input(RunMockAnalysisInput).mutation(({ ctx, input }) => runMockAnalysis(ctx.user, input)),
+    retryMockAnalysis: protectedProcedure.input(RetryMockAnalysisInput).mutation(({ ctx, input }) => retryMockAnalysis(ctx.user, input)),
+    session: protectedProcedure.input(HackathonSessionIdInput).query(({ ctx, input }) => getHackathonSession(ctx.user, input.sessionId)),
   }),
   readerLeader: router({
     preview: publicProcedure.query(async () => {

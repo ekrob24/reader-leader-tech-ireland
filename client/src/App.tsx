@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import LearnerSafety from "./pages/LearnerSafety";
 import ContentWorkflow from "./pages/ContentWorkflow";
+import SessionDemo from "./pages/SessionDemo";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -15,6 +16,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/learner-safety"} component={LearnerSafety} />
       <Route path={"/content-workflow"} component={ContentWorkflow} />
+      <Route path={"/session-demo"} component={SessionDemo} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

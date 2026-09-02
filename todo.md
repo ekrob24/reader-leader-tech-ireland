@@ -267,3 +267,26 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add unit, live Supabase RLS, storage-executor, router, and Playwright coverage for lifecycle and approval flows.
 - [x] Run TypeScript, complete Vitest, Playwright, live migration verification, and browser verification: 66 Vitest tests and 9 Playwright tests pass.
 - [x] Document the expanded MVP boundary and save a checkpoint.
+
+## Consent-gated sessions, durable lifecycle, and analysis operations
+
+- [ ] Inspect storage capabilities, session and consent boundaries, existing background infrastructure, alerting hooks, and relevant skills.
+- [ ] Define shared contracts for consent-gated session creation, bounded browser upload metadata, analysis jobs, retries, traces, alerts, and operational status.
+- [ ] Add migrations and typed schemas for upload/session records, durable jobs, retry attempts, trace events, alerts, and physical deletion requests/receipts.
+- [ ] Add a consent-aware session service and browser-to-server audio upload handler that never exposes privileged storage credentials.
+- [ ] Add a physical storage-deletion adapter, durable retry executor, idempotent analysis orchestration, trace correlation, and safe alert generation.
+- [ ] Build an adult-facing session upload and lifecycle status page with clear blocked, queued, retrying, and failed states.
+- [ ] Write operational incident, replay, retry, deletion, and alert runbooks.
+- [ ] Add unit, RLS, integration, worker, alert, and Playwright coverage; run TypeScript, the full suites, migration verification, and browser checks.
+- [ ] Document the expanded MVP boundary and save a checkpoint.
+
+## Hackathon-safe session and analysis demonstration
+
+- [x] Inspect existing session, consent, content workflow, dashboard, and test boundaries for the hackathon-safe demo.
+- [x] Define contracts for consent-gated mock sessions, upload states, durable mock analysis jobs, trace events, and safety-dashboard summaries.
+- [x] Add non-production migrations and typed schema updates for mock session/upload/job/trace state without storing audio bytes.
+- [x] Implement protected consent-gated session creation, mock upload progression, and deterministic mock analysis traces.
+- [x] Build an adult-facing hackathon demo page showing blocked, ready, uploaded, analysing, and reviewed safety states.
+- [x] Add workflow guidance in the content approval UI/docs for content steward drafting/review and teacher approved-passage selection.
+- [x] Add unit, integration, router, and Playwright coverage; run TypeScript, full tests, and visual verification.
+- [x] Document the mock-only boundary, demo script, current build status, and save a checkpoint.

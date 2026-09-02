@@ -18,6 +18,9 @@ export type DeletionTargetKind = "AUDIO_ASSET" | "DERIVED_DATA";
 export type DeletionReceiptOutcome = "DELETED" | "NOT_FOUND" | "BLOCKED";
 export type LifecycleAuditAction = "GUARDIAN_CONSENT_RECORDED" | "GUARDIAN_CONSENT_WITHDRAWN" | "DATA_DELETION_REQUESTED" | "AUDIO_DELETION_VERIFIED" | "DERIVED_DATA_DELETION_VERIFIED";
 export type ContentReviewAction = "DRAFT_CREATED" | "RIGHTS_CLEARED" | "RIGHTS_BLOCKED" | "SAFETY_PASSED" | "SAFETY_BLOCKED" | "APPROVED" | "RETIRED";
+export type MockUploadStatus = "NOT_STARTED" | "UPLOADED" | "BLOCKED";
+export type MockAnalysisJobStatus = "QUEUED" | "RUNNING" | "READY" | "FAILED" | "RETRYING" | "BLOCKED";
+export type MockTraceStage = "SESSION_CONSENT_CHECKED" | "MOCK_UPLOAD_RECORDED" | "ANALYSIS_QUEUED" | "ANALYSIS_STARTED" | "EVIDENCE_COMPOSED" | "POLICY_GATE_PASSED" | "ANALYSIS_READY" | "ANALYSIS_RETRYING" | "ANALYSIS_BLOCKED";
 
 type NoRelationships = [];
 
@@ -102,6 +105,24 @@ export interface Database {
         Update: never;
         Relationships: NoRelationships;
       };
+      mock_session_uploads: {
+        Row: { id: string; session_id: string; upload_status: MockUploadStatus; file_name: string; media_type: "audio/webm" | "audio/wav"; byte_size: number; idempotency_key: string; created_at: string };
+        Insert: { id?: string; session_id: string; upload_status?: MockUploadStatus; file_name: string; media_type: "audio/webm" | "audio/wav"; byte_size: number; idempotency_key: string; created_at?: string };
+        Update: { upload_status?: MockUploadStatus };
+        Relationships: NoRelationships;
+      };
+      mock_analysis_jobs: {
+        Row: { id: string; session_id: string; status: MockAnalysisJobStatus; attempt_count: number; trace_id: string; idempotency_key: string; created_at: string; updated_at: string };
+        Insert: { id?: string; session_id: string; status?: MockAnalysisJobStatus; attempt_count?: number; trace_id?: string; idempotency_key: string; created_at?: string; updated_at?: string };
+        Update: { status?: MockAnalysisJobStatus; attempt_count?: number; updated_at?: string };
+        Relationships: NoRelationships;
+      };
+      mock_analysis_trace_events: {
+        Row: { id: string; trace_id: string; session_id: string; stage: MockTraceStage; safe_summary: string; created_at: string };
+        Insert: { id?: string; trace_id: string; session_id: string; stage: MockTraceStage; safe_summary: string; created_at?: string };
+        Update: never;
+        Relationships: NoRelationships;
+      };
       reading_sessions: {
         Row: { id: string; organisation_id: string; learner_id: string; passage_id: string; status: SessionStatus; idempotency_key: string; started_at: string | null; completed_at: string | null; created_at: string };
         Insert: { id?: string; organisation_id: string; learner_id: string; passage_id: string; status?: SessionStatus; idempotency_key: string; started_at?: string | null; completed_at?: string | null; created_at?: string };
@@ -156,7 +177,7 @@ export interface Database {
       is_org_member: { Args: { target_org: string }; Returns: boolean };
       has_role: { Args: { target_org: string; allowed: ReaderLeaderRole[] }; Returns: boolean };
     };
-    Enums: { app_role: ReaderLeaderRole; session_status: SessionStatus; action: DecisionAction; consent_status: ConsentStatus; withdrawal_reason: WithdrawalReason; deletion_scope: DeletionScope; deletion_request_status: DeletionRequestStatus; deletion_target_kind: DeletionTargetKind; deletion_receipt_outcome: DeletionReceiptOutcome; lifecycle_audit_action: LifecycleAuditAction; content_review_action: ContentReviewAction };
+    Enums: { app_role: ReaderLeaderRole; session_status: SessionStatus; action: DecisionAction; consent_status: ConsentStatus; withdrawal_reason: WithdrawalReason; deletion_scope: DeletionScope; deletion_request_status: DeletionRequestStatus; deletion_target_kind: DeletionTargetKind; deletion_receipt_outcome: DeletionReceiptOutcome; lifecycle_audit_action: LifecycleAuditAction; content_review_action: ContentReviewAction; mock_upload_status: MockUploadStatus; mock_analysis_job_status: MockAnalysisJobStatus; mock_trace_stage: MockTraceStage };
     CompositeTypes: { [_ in never]: never };
   };
 }

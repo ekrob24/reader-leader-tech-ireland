@@ -31,6 +31,19 @@ const contentOverview = {
   reviewHistory: [{ id: "00000000-0000-4000-8000-000000000023", passageId: "00000000-0000-4000-8000-000000000022", action: "DRAFT_CREATED", createdAt: "2026-09-02T10:00:00.000Z" }],
 };
 
+const hackathonDemoSummary = {
+  organisationId: learner.organisationId,
+  activeConsentCount: 1,
+  blockedSessionCount: 0,
+  queuedOrRunningJobCount: 1,
+  sessions: [{
+    id: "00000000-0000-4000-8000-000000000031", learnerId: learner.id, passageId: contentOverview.approvedPassages[0].id, organisationId: learner.organisationId,
+    sessionStatus: "ANALYSING", uploadStatus: "UPLOADED", consentStatus: "ACTIVE", mayProcessData: true,
+    job: { id: "00000000-0000-4000-8000-000000000032", status: "QUEUED", attemptCount: 0, traceId: "00000000-0000-4000-8000-000000000033" },
+    traces: [{ id: "00000000-0000-4000-8000-000000000034", traceId: "00000000-0000-4000-8000-000000000033", sessionId: "00000000-0000-4000-8000-000000000031", stage: "SESSION_CONSENT_CHECKED", safeSummary: "Active guardian consent was verified before mock processing.", createdAt: "2026-09-02T10:00:00.000Z" }],
+  }],
+};
+
 async function authenticate(page: Page, user: User, scenario: Scenario = "success") {
   let timelineCalls = 0;
   await page.route("**/api/trpc/**", async route => {
@@ -61,6 +74,8 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       if (name === "contentWorkflow.organisations") return { result: { data: { json: [{ id: learner.organisationId, name: "Demo Academy", role: "school_admin", canGovernContent: true }] } } };
       if (name === "contentWorkflow.overview") return { result: { data: { json: contentOverview } } };
       if (name.startsWith("contentWorkflow.")) return { result: { data: { json: contentOverview.reviewQueue[0] } } };
+      if (name === "hackathonDemo.summary") return { result: { data: { json: hackathonDemoSummary } } };
+      if (name.startsWith("hackathonDemo.")) return { result: { data: { json: hackathonDemoSummary.sessions[0] } } };
       if (name === "readerLeader.preview") return { result: { data: { json: null } } };
       return { result: { data: { json: null } } };
     });
@@ -136,6 +151,21 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("The draft lane", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Clear rights" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pass safety" })).toBeVisible();
+  });
+
+  test("authenticated adults can review the consent-gated mock session and safe analysis trace", async ({ page }) => {
+    await authenticate(page, teacher);
+    await page.goto("/");
+    await page.getByText("Session demo", { exact: true }).click();
+    await expect(page).toHaveURL(/\/session-demo$/);
+    await expect(page.getByRole("heading", { name: /Demonstrate the safety path/i })).toBeVisible();
+    await expect(page.getByText("Mock data only", { exact: true })).toBeVisible();
+    await expect(page.getByText("Consent-gated session", { exact: true })).toBeVisible();
+    await expect(page.getByText("Mock upload metadata", { exact: true })).toBeVisible();
+    await expect(page.getByText("Safe trace timeline", { exact: true })).toBeVisible();
+    await expect(page.getByText("Active guardian consent was verified before mock processing.", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Run deterministic mock analysis" })).toBeVisible();
+    await expect(page.getByText(/does not capture or transmit a recording/i)).toBeVisible();
   });
 
   test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {
