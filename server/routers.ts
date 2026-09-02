@@ -15,6 +15,8 @@ import { LearnerSelectionInput, TimelinePageInput, OverrideReversalInput, TIMELI
 import { getLearnerWorkspace, getLearnerTimelinePage, listLearnersForActor, reverseOverride } from "./reader-leader/learner-safety-persistence";
 import { ReaderLeaderContractBoundaryError } from "./reader-leader/contract-boundary";
 import { TRPCError } from "@trpc/server";
+import { RecordGuardianConsentInput, RequestDataDeletionInput, WithdrawGuardianConsentInput, DataDeletionRequestId } from "@shared/consent-lifecycle";
+import { getDeletionStatus, getRetentionEligibility, recordGuardianConsent, requestDataDeletion, withdrawGuardianConsent } from "./reader-leader/consent-lifecycle";
 
 async function readLearnerSafetyData<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -47,6 +49,13 @@ export const appRouter = router({
     workspace: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => readLearnerSafetyData(() => getLearnerWorkspace(ctx.user, input.learnerId))),
     timeline: protectedProcedure.input(TimelinePageInput).query(({ ctx, input }) => readLearnerSafetyData(() => getLearnerTimelinePage(ctx.user, input))),
     reverseOverride: protectedProcedure.input(OverrideReversalInput).mutation(({ ctx, input }) => reverseOverride(ctx.user, input)),
+  }),
+  consentLifecycle: router({
+    recordGuardianConsent: protectedProcedure.input(RecordGuardianConsentInput).mutation(({ ctx, input }) => recordGuardianConsent(ctx.user, input)),
+    withdrawGuardianConsent: protectedProcedure.input(WithdrawGuardianConsentInput).mutation(({ ctx, input }) => withdrawGuardianConsent(ctx.user, input)),
+    requestDataDeletion: protectedProcedure.input(RequestDataDeletionInput).mutation(({ ctx, input }) => requestDataDeletion(ctx.user, input)),
+    retentionEligibility: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => getRetentionEligibility(ctx.user, input.learnerId)),
+    deletionStatus: protectedProcedure.input(z.object({ requestId: DataDeletionRequestId })).query(({ ctx, input }) => getDeletionStatus(ctx.user, input.requestId)),
   }),
   readerLeader: router({
     preview: publicProcedure.query(async () => {

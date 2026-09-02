@@ -18,6 +18,7 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 | S8 evaluation | Complete | Gold-pack metrics and deterministic regression gates. |
 | Access control and audit | Complete for the prototype | Membership-derived roles, RLS integration coverage, actor-link bridge, tenant checks, append-only override events. |
 | Data-contract resilience | Complete | Typed Supabase client generic, snake_case-to-contract normalizers, strict timestamp normalization, privacy-safe boundary logging, actionable malformed-timeline state. |
+| Priority 1 consent lifecycle | Complete foundation | Guardian-to-learner authorisation, append-only consent withdrawal, retention eligibility, deletion inventory, receipts, lifecycle audit, and live synthetic-data verification. |
 
 ## Current technical boundaries
 
@@ -28,15 +29,14 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 | Decision system | Deterministic evidence, bounded judgement, policy validation, auditability | Live agent run, production prompt tracing, provider monitoring. |
 | Speech and audio | Explicitly excluded | Audio capture, signed private upload, alignment, speech-provider adapter, playback. |
 | Learner experience | Teacher-owned safe preview only | Production child reading canvas and child account workflow. |
-| Data governance | Schema and RLS baselines; synthetic demo data only | Consent collection, withdrawal, retention/deletion, storage backup restoration, DPIA and operational runbooks. |
+| Data governance | Consent, withdrawal, retention eligibility, deletion requests and receipts, schema/RLS baselines; synthetic data only | Private storage deletion executor, backup restoration, DPIA and operational runbooks. |
 
 ## Next work, in priority order
 
-1. **Production trust and governance:** Add consent, guardian withdrawal, retention and deletion verification across database and storage before any real child data is accepted.
-2. **Speech workflow behind an adapter:** Implement private audio storage, consent-gated reading-session creation, known-text alignment, and a benchmarked provider adapter using synthetic or consented staging data only.
-3. **Durable analysis and observability:** Introduce idempotent background tasks, correlated telemetry, alerting, and a dead-letter/retry process; keep the policy gate as final authority.
-4. **Pilot readiness:** Add school onboarding, invited memberships, content stewardship and approval, staging/production separation, and supervised usability testing with literacy and safeguarding experts.
+1. **Private audio/session slice:** Implement private object storage, consent-gated session creation, signed uploads, object-hash inventory, and the production deletion executor using synthetic or consented staging data only.
+2. **Durable analysis and observability:** Introduce idempotent background tasks, correlated telemetry, alerting, and a dead-letter/retry process; keep the policy gate as final authority.
+3. **Pilot readiness:** Add backup-restoration verification, DPIA and operational runbooks, school onboarding/invites, content stewardship and approval, staging/production separation, and supervised usability testing with literacy and safeguarding experts.
 
 ## Verification baseline
 
-The current verified baseline is clean TypeScript checking, **53 Vitest tests**, **8 Playwright tests**, and a rendered authenticated learner-safety route. The test suite includes live two-organisation RLS checks, row-normalization tests, contract-boundary log redaction checks, and a browser flow that verifies the malformed-timeline recovery state. Earlier checkpoint text referenced a higher Vitest count; the current full-suite output above is the authoritative count.
+The current verified baseline is clean TypeScript checking, **60 Vitest tests**, **8 Playwright tests**, and a rendered authenticated learner-safety route through the Playwright suite. The test suite includes live two-organisation RLS checks, row-normalization tests, contract-boundary log redaction checks, guardian lifecycle/RLS checks, withdrawal/deletion trigger checks, deletion-receipt verification, and a browser flow that verifies the malformed-timeline recovery state. The direct preview endpoint is unauthenticated and therefore displays its protected-route loading state; authenticated browser behaviour is the assertion-backed E2E baseline.

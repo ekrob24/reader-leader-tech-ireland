@@ -260,3 +260,97 @@ describe("Supabase learner-safety persistence integration", () => {
     }
   });
 });
+
+describe("Supabase Priority 1 consent lifecycle integration", () => {
+  test("keeps guardian consent and deletion evidence private while prohibiting client lifecycle writes", async () => {
+    const consentId = randomUUID();
+    const withdrawalId = randomUUID();
+    const deletionRequestId = randomUUID();
+    const audioAssetId = randomUUID();
+    const derivedAssetId = randomUUID();
+    const receiptId = randomUUID();
+    const auditId = randomUUID();
+    const audioHash = "a".repeat(64);
+    const derivedHash = "b".repeat(64);
+    try {
+      await admin.query(
+        `insert into public.guardian_learner_links (guardian_id, learner_id, organisation_id)
+         values ($1, $2, $3)`,
+        [ids.userC, ids.learnerA, ids.organisationA],
+      );
+      await admin.query(
+        `insert into public.consents (id, learner_id, guardian_id, purpose, training_opt_in, retention_until, status, consent_text_version, policy_version, idempotency_key)
+         values ($1, $2, $3, 'READING_ASSESSMENT', false, now() + interval '30 days', 'ACTIVE', 'test-copy-1', 'test-policy-1', $4)`,
+        [consentId, ids.learnerA, ids.userC, `consent-${consentId}`],
+      );
+      await admin.query(
+        `insert into public.consent_withdrawals (id, consent_id, learner_id, guardian_id, reason, idempotency_key)
+         values ($1, $2, $3, $4, 'WITHDRAWAL_OF_CONSENT', $5)`,
+        [withdrawalId, consentId, ids.learnerA, ids.userC, `withdrawal-${withdrawalId}`],
+      );
+      const withdrawnConsent = await admin.query("select status from public.consents where id = $1", [consentId]);
+      expect(withdrawnConsent.rows[0]?.status).toBe("WITHDRAWN");
+      await admin.query(
+        `insert into public.data_deletion_requests (id, learner_id, guardian_id, organisation_id, scope, status, idempotency_key)
+         values ($1, $2, $3, $4, 'AUDIO_AND_DERIVED_DATA', 'REQUESTED', $5)`,
+        [deletionRequestId, ids.learnerA, ids.userC, ids.organisationA, `deletion-${deletionRequestId}`],
+      );
+      const pendingDeletionConsent = await admin.query("select status from public.consents where id = $1", [consentId]);
+      expect(pendingDeletionConsent.rows[0]?.status).toBe("PENDING_DELETION");
+      await admin.query(
+        `insert into public.audio_assets (id, learner_id, organisation_id, storage_object_hash, sha256, retention_until, deletion_request_id)
+         values ($1, $2, $3, $4, $5, now() + interval '30 days', $6)`,
+        [audioAssetId, ids.learnerA, ids.organisationA, audioHash, audioHash, deletionRequestId],
+      );
+      await admin.query(
+        `insert into public.derived_data_assets (id, learner_id, organisation_id, source_audio_asset_id, asset_kind, storage_object_hash, retention_until, deletion_request_id)
+         values ($1, $2, $3, $4, 'ALIGNMENT', $5, now() + interval '30 days', $6)`,
+        [derivedAssetId, ids.learnerA, ids.organisationA, audioAssetId, derivedHash, deletionRequestId],
+      );
+      await admin.query(
+        `insert into public.data_deletion_receipts (id, request_id, target_kind, target_reference_hash, outcome)
+         values ($1, $2, 'AUDIO_ASSET', $3, 'DELETED')`,
+        [receiptId, deletionRequestId, audioHash],
+      );
+      await admin.query(
+        `insert into public.data_lifecycle_audit_events (id, organisation_id, learner_id, guardian_id, deletion_request_id, action)
+         values ($1, $2, $3, $4, $5, 'DATA_DELETION_REQUESTED')`,
+        [auditId, ids.organisationA, ids.learnerA, ids.userC, deletionRequestId],
+      );
+
+      const guardianVisible = await asUser(ids.userC, async client => ({
+        consents: (await client.query("select id from public.consents where id = $1", [consentId])).rows,
+        requests: (await client.query("select id from public.data_deletion_requests where id = $1", [deletionRequestId])).rows,
+        receipts: (await client.query("select id from public.data_deletion_receipts where id = $1", [receiptId])).rows,
+        audit: (await client.query("select id from public.data_lifecycle_audit_events where id = $1", [auditId])).rows,
+      }));
+      expect(guardianVisible.consents).toHaveLength(1);
+      expect(guardianVisible.requests).toHaveLength(1);
+      expect(guardianVisible.receipts).toHaveLength(1);
+      expect(guardianVisible.audit).toHaveLength(1);
+
+      const unrelatedGuardian = await asUser(ids.userB, async client => ({
+        consents: (await client.query("select id from public.consents where id = $1", [consentId])).rows,
+        requests: (await client.query("select id from public.data_deletion_requests where id = $1", [deletionRequestId])).rows,
+        receipts: (await client.query("select id from public.data_deletion_receipts where id = $1", [receiptId])).rows,
+      }));
+      expect(unrelatedGuardian.consents).toHaveLength(0);
+      expect(unrelatedGuardian.requests).toHaveLength(0);
+      expect(unrelatedGuardian.receipts).toHaveLength(0);
+      await expect(asUser(ids.userC, client => client.query(
+        `insert into public.data_lifecycle_audit_events (organisation_id, learner_id, guardian_id, action)
+         values ($1, $2, $3, 'GUARDIAN_CONSENT_RECORDED')`,
+        [ids.organisationA, ids.learnerA, ids.userC],
+      ))).rejects.toThrow();
+    } finally {
+      await admin.query("delete from public.data_lifecycle_audit_events where id = $1", [auditId]);
+      await admin.query("delete from public.data_deletion_receipts where id = $1", [receiptId]);
+      await admin.query("delete from public.derived_data_assets where id = $1", [derivedAssetId]);
+      await admin.query("delete from public.audio_assets where id = $1", [audioAssetId]);
+      await admin.query("delete from public.data_deletion_requests where id = $1", [deletionRequestId]);
+      await admin.query("delete from public.consent_withdrawals where id = $1", [withdrawalId]);
+      await admin.query("delete from public.consents where id = $1", [consentId]);
+      await admin.query("delete from public.guardian_learner_links where guardian_id = $1 and learner_id = $2", [ids.userC, ids.learnerA]);
+    }
+  });
+});

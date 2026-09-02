@@ -245,3 +245,14 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Reconcile `todo.md` presentation and document the current build status, completed scope, and next priorities.
 - [x] Add regression tests and run TypeScript, Vitest, Playwright, and visual verification: 53 Vitest tests and 8 Playwright tests pass.
 - [x] Save a checkpoint after verification.
+
+## Priority 1: consent and data-lifecycle controls
+
+- [x] Inspect current consent, audit, retention, storage, and tenancy boundaries.
+- [x] Define shared Zod contracts for guardian consent, withdrawal, retention state, deletion requests, deletion receipts, and audit events.
+- [x] Add the Supabase migration and generated-style typed schema updates for consent, deletion, audio assets, derived data, and append-only audit records.
+- [x] Add RLS policies that restrict guardian consent and withdrawal actions to the linked guardian, preserve tenant boundaries, and prohibit client audit mutation.
+- [x] Add protected tRPC procedures for recording guardian consent, recording withdrawal, requesting deletion, and viewing safe deletion status.
+- [x] Add automated tests for withdrawal blocks, retention eligibility, deletion receipts, audit append-only behavior, RLS, and safe error states.
+- [x] Run TypeScript, complete Vitest, Playwright, migration verification, and browser verification: 60 Vitest tests and 8 Playwright tests pass.
+- [x] Document the Priority 1 implementation boundary and save a checkpoint.

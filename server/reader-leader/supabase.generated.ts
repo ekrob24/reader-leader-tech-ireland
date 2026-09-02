@@ -10,6 +10,13 @@
 export type ReaderLeaderRole = "school_admin" | "literacy_lead" | "teacher_set" | "content_steward" | "guardian" | "learner";
 export type SessionStatus = "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED";
 export type DecisionAction = "PROMPT" | "MODEL" | "STAY_SILENT" | "ESCALATE";
+export type ConsentStatus = "ACTIVE" | "WITHDRAWN" | "EXPIRED" | "PENDING_DELETION" | "DELETED";
+export type WithdrawalReason = "WITHDRAWAL_OF_CONSENT" | "RETENTION_OBJECTION" | "ACCOUNT_CLOSURE" | "OTHER";
+export type DeletionScope = "AUDIO_AND_DERIVED_DATA";
+export type DeletionRequestStatus = "REQUESTED" | "PROCESSING" | "COMPLETED" | "BLOCKED" | "FAILED";
+export type DeletionTargetKind = "AUDIO_ASSET" | "DERIVED_DATA";
+export type DeletionReceiptOutcome = "DELETED" | "NOT_FOUND" | "BLOCKED";
+export type LifecycleAuditAction = "GUARDIAN_CONSENT_RECORDED" | "GUARDIAN_CONSENT_WITHDRAWN" | "DATA_DELETION_REQUESTED" | "AUDIO_DELETION_VERIFIED" | "DERIVED_DATA_DELETION_VERIFIED";
 
 type NoRelationships = [];
 
@@ -35,9 +42,51 @@ export interface Database {
         Relationships: NoRelationships;
       };
       consents: {
-        Row: { id: string; learner_id: string; guardian_id: string; purpose: string; training_opt_in: boolean; retention_until: string; withdrawn_at: string | null; created_at: string };
-        Insert: { id?: string; learner_id: string; guardian_id: string; purpose: string; training_opt_in?: boolean; retention_until: string; withdrawn_at?: string | null; created_at?: string };
-        Update: { id?: string; learner_id?: string; guardian_id?: string; purpose?: string; training_opt_in?: boolean; retention_until?: string; withdrawn_at?: string | null; created_at?: string };
+        Row: { id: string; learner_id: string; guardian_id: string; purpose: string; training_opt_in: false; retention_until: string; withdrawn_at: string | null; status: ConsentStatus; consent_text_version: string; policy_version: string; idempotency_key: string; created_at: string };
+        Insert: { id?: string; learner_id: string; guardian_id: string; purpose: string; training_opt_in?: false; retention_until: string; withdrawn_at?: string | null; status?: ConsentStatus; consent_text_version: string; policy_version: string; idempotency_key: string; created_at?: string };
+        Update: { id?: string; learner_id?: string; guardian_id?: string; purpose?: string; training_opt_in?: false; retention_until?: string; withdrawn_at?: string | null; status?: ConsentStatus; consent_text_version?: string; policy_version?: string; idempotency_key?: string; created_at?: string };
+        Relationships: NoRelationships;
+      };
+      guardian_learner_links: {
+        Row: { guardian_id: string; learner_id: string; organisation_id: string; relationship_label: string; created_at: string };
+        Insert: { guardian_id: string; learner_id: string; organisation_id: string; relationship_label?: string; created_at?: string };
+        Update: { guardian_id?: string; learner_id?: string; organisation_id?: string; relationship_label?: string; created_at?: string };
+        Relationships: NoRelationships;
+      };
+      consent_withdrawals: {
+        Row: { id: string; consent_id: string; learner_id: string; guardian_id: string; reason: WithdrawalReason; idempotency_key: string; requested_at: string };
+        Insert: { id?: string; consent_id: string; learner_id: string; guardian_id: string; reason: WithdrawalReason; idempotency_key: string; requested_at?: string };
+        Update: never;
+        Relationships: NoRelationships;
+      };
+      data_deletion_requests: {
+        Row: { id: string; learner_id: string; guardian_id: string; organisation_id: string; scope: DeletionScope; status: DeletionRequestStatus; idempotency_key: string; requested_at: string; completed_at: string | null };
+        Insert: { id?: string; learner_id: string; guardian_id: string; organisation_id: string; scope: DeletionScope; status?: DeletionRequestStatus; idempotency_key: string; requested_at?: string; completed_at?: string | null };
+        Update: { status?: DeletionRequestStatus; completed_at?: string | null };
+        Relationships: NoRelationships;
+      };
+      audio_assets: {
+        Row: { id: string; learner_id: string; organisation_id: string; storage_object_hash: string; sha256: string; retention_until: string; deleted_at: string | null; deletion_request_id: string | null; created_at: string };
+        Insert: { id?: string; learner_id: string; organisation_id: string; storage_object_hash: string; sha256: string; retention_until: string; deleted_at?: string | null; deletion_request_id?: string | null; created_at?: string };
+        Update: { deleted_at?: string | null; deletion_request_id?: string | null };
+        Relationships: NoRelationships;
+      };
+      derived_data_assets: {
+        Row: { id: string; learner_id: string; organisation_id: string; source_audio_asset_id: string | null; asset_kind: "SPEECH_ASSESSMENT" | "ALIGNMENT" | "DECISION_TRACE"; storage_object_hash: string | null; retention_until: string; deleted_at: string | null; deletion_request_id: string | null; created_at: string };
+        Insert: { id?: string; learner_id: string; organisation_id: string; source_audio_asset_id?: string | null; asset_kind: "SPEECH_ASSESSMENT" | "ALIGNMENT" | "DECISION_TRACE"; storage_object_hash?: string | null; retention_until: string; deleted_at?: string | null; deletion_request_id?: string | null; created_at?: string };
+        Update: { deleted_at?: string | null; deletion_request_id?: string | null };
+        Relationships: NoRelationships;
+      };
+      data_deletion_receipts: {
+        Row: { id: string; request_id: string; target_kind: DeletionTargetKind; target_reference_hash: string; outcome: DeletionReceiptOutcome; verified_at: string };
+        Insert: { id?: string; request_id: string; target_kind: DeletionTargetKind; target_reference_hash: string; outcome: DeletionReceiptOutcome; verified_at?: string };
+        Update: never;
+        Relationships: NoRelationships;
+      };
+      data_lifecycle_audit_events: {
+        Row: { id: string; organisation_id: string; learner_id: string; guardian_id: string | null; deletion_request_id: string | null; action: LifecycleAuditAction; created_at: string };
+        Insert: { id?: string; organisation_id: string; learner_id: string; guardian_id?: string | null; deletion_request_id?: string | null; action: LifecycleAuditAction; created_at?: string };
+        Update: never;
         Relationships: NoRelationships;
       };
       passages: {
@@ -100,7 +149,7 @@ export interface Database {
       is_org_member: { Args: { target_org: string }; Returns: boolean };
       has_role: { Args: { target_org: string; allowed: ReaderLeaderRole[] }; Returns: boolean };
     };
-    Enums: { app_role: ReaderLeaderRole; session_status: SessionStatus; action: DecisionAction };
+    Enums: { app_role: ReaderLeaderRole; session_status: SessionStatus; action: DecisionAction; consent_status: ConsentStatus; withdrawal_reason: WithdrawalReason; deletion_scope: DeletionScope; deletion_request_status: DeletionRequestStatus; deletion_target_kind: DeletionTargetKind; deletion_receipt_outcome: DeletionReceiptOutcome; lifecycle_audit_action: LifecycleAuditAction };
     CompositeTypes: { [_ in never]: never };
   };
 }
