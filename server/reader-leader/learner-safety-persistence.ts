@@ -1,5 +1,5 @@
 import { getSupabaseAdminClient } from "../supabase";
-import { LearnerRecord, LearnerSafetyWorkspace, TimelineEntry, AuditEntry, OverrideReversalInput } from "@shared/learner-safety-persistence";
+import { LearnerRecord, LearnerSafetyWorkspace, TimelineEntry, TimelinePage, TimelinePageInput, AuditEntry, OverrideReversalInput } from "@shared/learner-safety-persistence";
 import { resolveSupabaseUserId } from "./override-persistence";
 
 const teacherRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
@@ -26,6 +26,17 @@ export async function listLearnersForActor(manusOpenId: string) {
   const { data, error } = await getSupabaseAdminClient().from("learners").select("id, display_name, safe_label, organisation_id").in("organisation_id", organisationIds).order("display_name");
   if (error) throw new Error("Unable to load learners");
   return (data ?? []).map(row => LearnerRecord.parse(row));
+}
+
+export async function getLearnerTimelinePage(manusOpenId: string, input: TimelinePageInput): Promise<TimelinePage> {
+  await learnerFor(manusOpenId, input.learnerId);
+  const from = (input.page - 1) * input.pageSize;
+  const to = from + input.pageSize - 1;
+  const { data, count, error } = await getSupabaseAdminClient().from("learner_safety_decisions").select("id, learner_id, action, status, summary, created_at, override_id", { count: "exact" }).eq("learner_id", input.learnerId).order("created_at", { ascending: false }).range(from, to);
+  if (error) throw new Error("Unable to load decision timeline");
+  const items = (data ?? []).map(row => TimelineEntry.parse({ ...row, createdAt: row.created_at, overrideId: row.override_id ?? null }));
+  const total = count ?? items.length;
+  return TimelinePage.parse({ items, page: input.page, pageSize: input.pageSize, total, nextPage: input.page * input.pageSize < total ? input.page + 1 : null });
 }
 
 export async function getLearnerWorkspace(manusOpenId: string, learnerId: string): Promise<LearnerSafetyWorkspace> {

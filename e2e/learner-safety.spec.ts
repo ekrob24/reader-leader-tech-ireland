@@ -25,6 +25,7 @@ const overviewFor = (role: "teacher" | "viewer") => ({
 });
 
 async function authenticate(page: Page, user: User, scenario: Scenario = "success") {
+  let timelineCalls = 0;
   await page.route("**/api/trpc/**", async route => {
     const requestUrl = new URL(route.request().url());
     const procedures = (requestUrl.pathname.split("/").pop() ?? "").split(",");
@@ -36,6 +37,12 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       }
       if (name === "learnerSafety.workspace") {
         return { result: { data: { json: workspaceFor(user.role === "admin") } } };
+      }
+      if (name === "learnerSafety.timeline") {
+        timelineCalls += 1;
+        const pageNumber = timelineCalls;
+        const pageItems = pageNumber === 1 ? workspaceFor(user.role === "admin").timeline : [];
+        return { result: { data: { json: { items: pageItems, page: pageNumber, pageSize: 5, total: 6, nextPage: pageNumber === 1 ? 2 : null } } } };
       }
       if (name === "learnerSafety.overview") {
         if (scenario === "forbidden") return { error: { json: { message: "Learner safety is restricted", code: -32003, data: { code: "FORBIDDEN", httpStatus: 403, path: name } } } };
@@ -83,6 +90,9 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Admin / teacher", { exact: true })).toBeVisible();
     await expect(page.getByText("Reverse an override", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Append reversal event" }).click();
+    await expect(page.getByRole("dialog", { name: "Confirm override reversal" })).toBeVisible();
+    await page.getByLabel("Reversal reason").fill("Teacher reviewed the original proposal and is restoring it for this learner.");
+    await page.getByRole("button", { name: "Confirm reversal" }).click();
     await expect(page.getByRole("status")).toContainText("Reversal appended to the audit history.");
     await expect(page.getByLabel("Selected learner")).toHaveValue(learner.id);
     await expect(page.getByText("Decision timeline", { exact: true })).toBeVisible();
@@ -93,6 +103,15 @@ test.describe("authenticated learner safety navigation", () => {
     await page.getByRole("button", { name: "Continue gently" }).click();
     await expect(page.getByText("2 of 3", { exact: true })).toBeVisible();
     await expect(page.getByText("Enabled", { exact: true }).first()).toBeVisible();
+  });
+
+  test("teacher can paginate the persisted decision timeline", async ({ page }) => {
+    await authenticate(page, teacher);
+    await openLearnerSafety(page);
+    await expect(page.getByText("Page 1", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.getByText("Page 2", { exact: true })).toBeVisible();
+    await expect(page.getByText("No decisions have been persisted for this learner yet.", { exact: true })).toBeVisible();
   });
 
   test("viewer can navigate to learner safety but receives read-only controls", async ({ page }) => {

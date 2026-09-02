@@ -15,6 +15,8 @@ export type LearnerRecord = z.infer<typeof LearnerRecord>;
 export const LearnerSelectionInput = z.object({ learnerId: LearnerId });
 export type LearnerSelectionInput = z.infer<typeof LearnerSelectionInput>;
 
+
+
 export const TimelineEntry = z.object({
   id: DecisionId,
   learnerId: LearnerId,
@@ -25,6 +27,12 @@ export const TimelineEntry = z.object({
   overrideId: OverrideId.nullable(),
 });
 export type TimelineEntry = z.infer<typeof TimelineEntry>;
+
+export const TimelinePageInput = z.object({ learnerId: LearnerId, page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(10) });
+export type TimelinePageInput = z.infer<typeof TimelinePageInput>;
+
+export const TimelinePage = z.object({ items: z.array(TimelineEntry), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(50), total: z.number().int().min(0), nextPage: z.number().int().min(1).nullable() });
+export type TimelinePage = z.infer<typeof TimelinePage>;
 
 export const AuditEntry = z.object({
   id: z.string().uuid(),

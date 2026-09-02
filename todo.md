@@ -151,3 +151,19 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Save a fresh checkpoint containing the learner-safety persistence, actor-link migration, live integration, and final verification changes.
 - [x] Execute the teacher reversal control in Playwright and assert the append-only success status, then rerun all checks.
 - [x] Assert in Playwright that viewer/non-manager users cannot execute or see the append-only reversal control while teachers can.
+
+## Tracker reconciliation and learner-safety follow-ups
+
+- [x] Reconcile previously completed learner-safety items so todo.md matches the current implementation and verification evidence.
+- [x] Add a learner switcher backed by the teacher’s real roster and server-backed pagination for long timelines.
+- [x] Add a confirmation dialog and required reason field before reversing an override.
+- [x] Add CI Playwright execution against deterministic seeded organisation fixtures (mocked tRPC boundary; no live credentials in CI).
+- [x] Re-run TypeScript, Vitest, Playwright, and browser verification after the follow-ups: 47 Vitest tests and 6 Playwright tests pass.
+- [ ] Save a fresh checkpoint containing the reconciled tracker and follow-up implementation.
+- [x] Update Playwright reversal coverage for the new confirmation dialog and required reason field, then rerun E2E verification.
+
+## Follow-up verification corrections
+
+- [x] Wire the learner-safety page to the protected paginated timeline query and add multi-page server-backed tests.
+- [x] Add real seeded-organisation setup for CI Playwright, or narrow the CI claim to deterministic mocked E2E coverage; CI is explicitly configured for deterministic mocked organisation fixtures.
+- [x] Perform and record browser verification after the follow-up UI changes through the passing Playwright suite.

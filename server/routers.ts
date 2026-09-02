@@ -11,8 +11,8 @@ import { z } from "zod";
 import { persistHumanOverride, resolveDecisionOrganisation, resolveReviewerContext } from "./reader-leader/override-persistence";
 import { getSupabaseAdminClient } from "./supabase";
 import { buildLearnerSafetyOverview } from "@shared/learner-safety";
-import { LearnerSelectionInput, OverrideReversalInput } from "@shared/learner-safety-persistence";
-import { getLearnerWorkspace, listLearnersForActor, reverseOverride } from "./reader-leader/learner-safety-persistence";
+import { LearnerSelectionInput, TimelinePageInput, OverrideReversalInput } from "@shared/learner-safety-persistence";
+import { getLearnerWorkspace, getLearnerTimelinePage, listLearnersForActor, reverseOverride } from "./reader-leader/learner-safety-persistence";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -32,6 +32,7 @@ export const appRouter = router({
     overview: protectedProcedure.query(({ ctx }) => buildLearnerSafetyOverview(ctx.user.role)),
     learners: protectedProcedure.query(({ ctx }) => listLearnersForActor(ctx.user.openId)),
     workspace: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => getLearnerWorkspace(ctx.user.openId, input.learnerId)),
+    timeline: protectedProcedure.input(TimelinePageInput).query(({ ctx, input }) => getLearnerTimelinePage(ctx.user.openId, input)),
     reverseOverride: protectedProcedure.input(OverrideReversalInput).mutation(({ ctx, input }) => reverseOverride(ctx.user.openId, input)),
   }),
   readerLeader: router({
