@@ -105,6 +105,14 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Enabled", { exact: true }).first()).toBeVisible();
   });
 
+  test("configuration failure is actionable and does not expose the raw Supabase URL error", async ({ page }) => {
+    await authenticate(page, teacher, "error");
+    await openLearnerSafety(page);
+    await expect(page.getByText("Safety workspace unavailable", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Invalid supabaseUrl/i)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Retry loading" })).toBeVisible();
+  });
+
   test("teacher can paginate the persisted decision timeline", async ({ page }) => {
     await authenticate(page, teacher);
     await openLearnerSafety(page);

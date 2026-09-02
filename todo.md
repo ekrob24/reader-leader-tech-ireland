@@ -167,3 +167,14 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Wire the learner-safety page to the protected paginated timeline query and add multi-page server-backed tests.
 - [x] Add real seeded-organisation setup for CI Playwright, or narrow the CI claim to deterministic mocked E2E coverage; CI is explicitly configured for deterministic mocked organisation fixtures.
 - [x] Perform and record browser verification after the follow-up UI changes through the passing Playwright suite.
+
+## Bug fix: invalid Supabase URL on learner safety
+
+- [x] Inspect runtime Supabase URL resolution and deployment secret mapping.
+- [x] Add strict HTTP/HTTPS URL validation at the server client boundary.
+- [x] Make learner-safety surface configuration failures actionable and non-crashing.
+- [x] Add regression coverage for missing, malformed, and valid Supabase URLs.
+- [x] Run TypeScript, complete Vitest, and affected-route/browser verification: 48 Vitest tests and 7 Playwright tests pass.
+- [x] Save a checkpoint after verification.
+- [x] Add a focused learner-safety configuration-error test proving malformed Supabase config becomes a non-crashing actionable state.
+- [x] Run an authenticated Playwright learner-safety check after the URL fix and assert the invalid-URL error is absent.
