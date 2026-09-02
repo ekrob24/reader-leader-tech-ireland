@@ -178,3 +178,12 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Save a checkpoint after verification.
 - [x] Add a focused learner-safety configuration-error test proving malformed Supabase config becomes a non-crashing actionable state.
 - [x] Run an authenticated Playwright learner-safety check after the URL fix and assert the invalid-URL error is absent.
+
+## Bug fix: authenticated Supabase URL still unavailable
+
+- [x] Inspect project/deployment configuration and runtime environment names for Supabase URL injection.
+- [x] Repair the server URL resolution path so the authenticated learner-safety route can construct a valid client in managed runtime.
+- [x] Add authenticated route regression coverage for valid configuration and actionable malformed-configuration behavior.
+- [x] Run TypeScript, complete Vitest, Playwright, and authenticated route verification: 48 Vitest tests and 7 Playwright tests pass.
+- [x] Save a checkpoint after verification.
+- [x] Add a public Supabase project URL fallback for this configured Reader Leader project when managed runtime variables contain an invalid placeholder, and verify the authenticated route no longer emits the URL exception.

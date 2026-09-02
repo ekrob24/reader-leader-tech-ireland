@@ -15,14 +15,16 @@ export function parseSupabaseUrl(value: string | undefined): string | null {
   }
 }
 
-function getSupabaseUrl(): string {
-  const url = parseSupabaseUrl(process.env.SUPABASE_URL) ?? parseSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  if (!url) throw new Error("Supabase project URL is missing or invalid. Set SUPABASE_URL to an HTTP or HTTPS Supabase project URL.");
-  return url;
+export const READER_LEADER_SUPABASE_URL = "https://qpvzzrgofxregccverfr.supabase.co";
+
+export function resolveSupabaseUrl(): string {
+  return parseSupabaseUrl(process.env.SUPABASE_URL)
+    ?? parseSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
+    ?? READER_LEADER_SUPABASE_URL;
 }
 
 export function getSupabaseAdminClient(): SupabaseClient {
-  const url = getSupabaseUrl();
+  const url = resolveSupabaseUrl();
   if (!process.env.SUPABASE_SECRET_KEY) {
     throw new Error("Supabase server configuration is incomplete");
   }
@@ -36,7 +38,7 @@ export function getSupabaseAdminClient(): SupabaseClient {
 
 export function getSupabaseUserClient(accessToken: string): SupabaseClient {
   const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const url = getSupabaseUrl();
+  const url = resolveSupabaseUrl();
   if (!accessToken.trim()) throw new Error("Supabase access token is required");
   if (!publishableKey) {
     throw new Error("Supabase user client configuration is incomplete");

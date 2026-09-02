@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseSupabaseUrl } from "./supabase";
+import { parseSupabaseUrl, READER_LEADER_SUPABASE_URL, resolveSupabaseUrl } from "./supabase";
 
 describe("Supabase URL configuration", () => {
   it("rejects malformed values and reaches Auth settings when runtime configuration is available", async () => {
     expect(parseSupabaseUrl("not-a-url")).toBeNull();
     expect(parseSupabaseUrl("postgresql://db.example.test")).toBeNull();
-    expect(parseSupabaseUrl("https://qpvzzrgofxregccverfr.supabase.co")).toBe("https://qpvzzrgofxregccverfr.supabase.co");
+    expect(parseSupabaseUrl("https://qpvzzrgofxregccverfr.supabase.co")).toBe(READER_LEADER_SUPABASE_URL);
+    expect(resolveSupabaseUrl()).toBe(READER_LEADER_SUPABASE_URL);
 
     const projectUrl = parseSupabaseUrl(process.env.SUPABASE_URL) ?? parseSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
     const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
