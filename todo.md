@@ -98,3 +98,35 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Compare current source, built client output, HMR state, and browser-console timestamps to determine whether the warning is stale or emitted by another component; recorded `/` warnings predate the fix and no post-fix warning was found.
 - [x] Record the next incomplete implementation work and recommended remediation path; no incomplete implementation items remain in todo.md, and the next practical work is authenticated end-to-end QA plus product follow-through.
 - [x] Inspect the production build output for duplicate navigation-key code and narrow the warning conclusion if the build artifact is unavailable; build succeeded, obsolete key pattern matches are zero, and current IDs are present.
+
+## Feature: learner safety route and authenticated navigation
+
+- [x] Inspect current auth, routing, Supabase membership, and browser-test setup.
+- [x] Define role-based learner-safety permissions and safe content boundaries.
+- [x] Add protected learner-safety server procedures and route data.
+- [x] Build a learner-safety page that clearly separates teacher controls from child-safe views.
+- [x] Add loading, empty, forbidden, and error states for learner safety.
+- [x] Add authenticated Playwright end-to-end tests for navigation, routing, and role permissions.
+- [x] Run TypeScript, all Vitest tests, Playwright tests, and browser verification.
+- [x] Save a checkpoint after verification.
+
+## Learner safety route UI and E2E coverage
+
+- [x] Inspect current route, auth, permission, and browser-test setup.
+- [x] Define learner-safety role boundaries for teacher controls and child-safe views.
+- [x] Implement the authenticated learner-safety route and protected server data.
+- [x] Build a visually distinct teacher-controls panel and child-facing-safe view panel.
+- [x] Add loading, forbidden, and error states for learner safety.
+- [x] Install/configure Playwright and add authenticated navigation and role-permission tests.
+- [x] Run TypeScript, all Vitest tests, Playwright tests, and browser verification.
+- [x] Save a checkpoint after verification.
+- [x] Fix Playwright learner-safety E2E response mocking or route rendering failure; tests reach `/learner-safety` but do not see the page heading.
+- [x] Fix Playwright batched tRPC interception so combined auth and learner-safety/preview queries return responses in the correct order.
+- [x] Add a distinct learner-safety empty state and separate forbidden access from generic load failure.
+- [x] Add Playwright coverage for forbidden and empty learner-safety states.
+- [x] Run explicit browser verification of the learner-safety route and record the result; Playwright verifies the unauthenticated OAuth redirect, teacher/viewer routing, forbidden state, and empty state.
+- [ ] Save a checkpoint after learner-safety implementation and verification.
+- [x] Fix forbidden-state detection so a structured or message-level permission denial renders the restricted state in end-to-end tests.
+- [x] Add Playwright coverage for unauthenticated learner-safety behavior and narrow the verification note to evidence-backed assertions.
+- [x] Update unauthenticated Playwright coverage to assert the existing Manus OAuth redirect rather than an in-page sign-in heading.
+- [x] Narrow the learner-safety verification note to only evidence-backed Playwright results: OAuth redirect, teacher/viewer routing, forbidden state, and empty state.

@@ -10,6 +10,7 @@ import { AppendOnlyOverrideInput } from "@shared/contracts/reader-leader";
 import { z } from "zod";
 import { persistHumanOverride, resolveDecisionOrganisation, resolveReviewerContext } from "./reader-leader/override-persistence";
 import { getSupabaseAdminClient } from "./supabase";
+import { buildLearnerSafetyOverview } from "@shared/learner-safety";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -25,6 +26,9 @@ export const appRouter = router({
     }),
   }),
 
+  learnerSafety: router({
+    overview: protectedProcedure.query(({ ctx }) => buildLearnerSafetyOverview(ctx.user.role)),
+  }),
   readerLeader: router({
     preview: publicProcedure.query(async () => {
       const pack = await loadGoldPack();

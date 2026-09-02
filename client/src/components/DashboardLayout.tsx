@@ -29,7 +29,7 @@ import { Button } from "./ui/button";
 
 export const dashboardMenuItems = [
   { id: "evidence-desk", icon: LayoutDashboard, label: "Evidence desk", path: "/" },
-  { id: "learner-safety", icon: Users, label: "Learner safety", path: "/" },
+  { id: "learner-safety", icon: Users, label: "Learner safety", path: "/learner-safety" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
