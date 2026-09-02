@@ -22,8 +22,8 @@ type DeletionRequestRow = {
 };
 
 export type DeletionExecutor = {
-  deleteAudioAsset: (asset: { id: string; storageObjectHash: string }) => Promise<"DELETED" | "NOT_FOUND" | "BLOCKED">;
-  deleteDerivedData: (asset: { id: string; storageObjectHash: string | null }) => Promise<"DELETED" | "NOT_FOUND" | "BLOCKED">;
+  deleteAudioAsset: (asset: { id: string; storageKey: string | null; storageObjectHash: string }) => Promise<"DELETED" | "NOT_FOUND" | "BLOCKED">;
+  deleteDerivedData: (asset: { id: string; storageKey: string | null; storageObjectHash: string | null }) => Promise<"DELETED" | "NOT_FOUND" | "BLOCKED">;
 };
 
 function nowIso() { return new Date().toISOString(); }
@@ -198,23 +198,23 @@ export async function processDeletionVerification(requestId: string, executor: D
   const row = request as DeletionRequestRow & { organisation_id: string };
   await client.from("data_deletion_requests").update({ status: "PROCESSING" }).eq("id", requestId);
   const [{ data: audioAssets, error: audioError }, { data: derivedAssets, error: derivedError }] = await Promise.all([
-    client.from("audio_assets").select("id, storage_object_hash").eq("learner_id", row.learner_id).is("deleted_at", null),
-    client.from("derived_data_assets").select("id, storage_object_hash").eq("learner_id", row.learner_id).is("deleted_at", null),
+    client.from("audio_assets").select("id, storage_key, storage_object_hash").eq("learner_id", row.learner_id).is("deleted_at", null),
+    client.from("derived_data_assets").select("id, storage_key, storage_object_hash").eq("learner_id", row.learner_id).is("deleted_at", null),
   ]);
   if (audioError || derivedError) throw new Error("Unable to load deletion inventory");
   const verifiedAt = nowIso();
   let blocked = false;
   for (const asset of audioAssets ?? []) {
-    const outcome = await executor.deleteAudioAsset({ id: asset.id, storageObjectHash: asset.storage_object_hash });
+    const outcome = await executor.deleteAudioAsset({ id: asset.id, storageKey: asset.storage_key, storageObjectHash: asset.storage_object_hash });
     if (outcome === "BLOCKED") blocked = true;
-    if (outcome !== "BLOCKED") await client.from("audio_assets").update({ deleted_at: verifiedAt, deletion_request_id: requestId }).eq("id", asset.id);
+    if (outcome !== "BLOCKED") await client.from("audio_assets").update({ storage_key: null, deleted_at: verifiedAt, deletion_request_id: requestId }).eq("id", asset.id);
     await client.from("data_deletion_receipts").insert({ request_id: requestId, target_kind: "AUDIO_ASSET", target_reference_hash: asset.storage_object_hash, outcome, verified_at: verifiedAt });
     await appendLifecycleAudit({ organisationId: row.organisation_id, learnerId: row.learner_id, guardianId: row.guardian_id, deletionRequestId: requestId, action: "AUDIO_DELETION_VERIFIED" });
   }
   for (const asset of derivedAssets ?? []) {
-    const outcome = await executor.deleteDerivedData({ id: asset.id, storageObjectHash: asset.storage_object_hash });
+    const outcome = await executor.deleteDerivedData({ id: asset.id, storageKey: asset.storage_key, storageObjectHash: asset.storage_object_hash });
     if (outcome === "BLOCKED") blocked = true;
-    if (outcome !== "BLOCKED") await client.from("derived_data_assets").update({ deleted_at: verifiedAt, deletion_request_id: requestId }).eq("id", asset.id);
+    if (outcome !== "BLOCKED") await client.from("derived_data_assets").update({ storage_key: null, deleted_at: verifiedAt, deletion_request_id: requestId }).eq("id", asset.id);
     const referenceHash = asset.storage_object_hash ?? "0".repeat(64);
     await client.from("data_deletion_receipts").insert({ request_id: requestId, target_kind: "DERIVED_DATA", target_reference_hash: referenceHash, outcome, verified_at: verifiedAt });
     await appendLifecycleAudit({ organisationId: row.organisation_id, learnerId: row.learner_id, guardianId: row.guardian_id, deletionRequestId: requestId, action: "DERIVED_DATA_DELETION_VERIFIED" });

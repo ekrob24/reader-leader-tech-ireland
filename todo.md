@@ -256,3 +256,14 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add automated tests for withdrawal blocks, retention eligibility, deletion receipts, audit append-only behavior, RLS, and safe error states.
 - [x] Run TypeScript, complete Vitest, Playwright, migration verification, and browser verification: 60 Vitest tests and 8 Playwright tests pass.
 - [x] Document the Priority 1 implementation boundary and save a checkpoint.
+
+## Private data lifecycle execution and approved-passage workflow
+
+- [x] Inspect existing storage helpers, passage schema, consent lifecycle, auth roles, and reusable UI components.
+- [x] Add consent-aware private storage inventory and a server-side deletion executor that emits verifiable receipts.
+- [x] Add schema/contracts/RLS for passage draft, review, approval, and safe approved-passage selection.
+- [x] Add protected tRPC procedures for content-steward review actions, teacher approved-passage selection, and lifecycle status.
+- [x] Build adult-facing content approval and approved-passage selection interfaces with loading, empty, forbidden, and error states.
+- [x] Add unit, live Supabase RLS, storage-executor, router, and Playwright coverage for lifecycle and approval flows.
+- [x] Run TypeScript, complete Vitest, Playwright, live migration verification, and browser verification: 66 Vitest tests and 9 Playwright tests pass.
+- [x] Document the expanded MVP boundary and save a checkpoint.

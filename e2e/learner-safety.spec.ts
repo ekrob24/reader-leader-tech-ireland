@@ -24,6 +24,13 @@ const overviewFor = (role: "teacher" | "viewer") => ({
   },
 });
 
+const contentOverview = {
+  organisation: { id: learner.organisationId, name: "Demo Academy", role: "school_admin", canGovernContent: true },
+  approvedPassages: [{ id: "00000000-0000-4000-8000-000000000021", title: "The gentle harbour", body: "A short approved passage for teacher selection.", version: 1, regionTags: ["IE"], approvalStatus: "APPROVED", rightsStatus: "CLEARED", safetyStatus: "PASSED", approvedAt: "2026-09-02T10:00:00.000Z", canApprove: false }],
+  reviewQueue: [{ id: "00000000-0000-4000-8000-000000000022", title: "The draft lane", body: "A passage awaiting adult rights and safety review.", version: 1, regionTags: ["IE"], approvalStatus: "DRAFT", rightsStatus: "UNREVIEWED", safetyStatus: "UNREVIEWED", approvedAt: null, canApprove: false }],
+  reviewHistory: [{ id: "00000000-0000-4000-8000-000000000023", passageId: "00000000-0000-4000-8000-000000000022", action: "DRAFT_CREATED", createdAt: "2026-09-02T10:00:00.000Z" }],
+};
+
 async function authenticate(page: Page, user: User, scenario: Scenario = "success") {
   let timelineCalls = 0;
   await page.route("**/api/trpc/**", async route => {
@@ -51,6 +58,9 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
         if (scenario === "empty") return { result: { data: { json: null } } };
         return { result: { data: { json: overviewFor(user.role === "admin" ? "teacher" : "viewer") } } };
       }
+      if (name === "contentWorkflow.organisations") return { result: { data: { json: [{ id: learner.organisationId, name: "Demo Academy", role: "school_admin", canGovernContent: true }] } } };
+      if (name === "contentWorkflow.overview") return { result: { data: { json: contentOverview } } };
+      if (name.startsWith("contentWorkflow.")) return { result: { data: { json: contentOverview.reviewQueue[0] } } };
       if (name === "readerLeader.preview") return { result: { data: { json: null } } };
       return { result: { data: { json: null } } };
     });
@@ -112,6 +122,20 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Safety workspace unavailable", { exact: true })).toBeVisible();
     await expect(page.getByText(/Invalid supabaseUrl/i)).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Retry loading" })).toBeVisible();
+  });
+
+  test("authenticated adults can reach the content workflow and see approval separated from teacher selection", async ({ page }) => {
+    await authenticate(page, teacher);
+    await page.goto("/");
+    await page.getByText("Content workflow", { exact: true }).click();
+    await expect(page).toHaveURL(/\/content-workflow$/);
+    await expect(page.getByRole("heading", { name: /Approve the text/i })).toBeVisible();
+    await expect(page.getByText("Approved passages", { exact: true })).toBeVisible();
+    await expect(page.getByText("The gentle harbour", { exact: true })).toBeVisible();
+    await expect(page.getByText("Review queue", { exact: true })).toBeVisible();
+    await expect(page.getByText("The draft lane", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Clear rights" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pass safety" })).toBeVisible();
   });
 
   test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {

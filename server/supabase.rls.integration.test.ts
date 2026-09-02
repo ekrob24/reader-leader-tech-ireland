@@ -10,6 +10,7 @@ type FixtureIds = {
   userA: string;
   userB: string;
   userC: string;
+  userD: string;
   organisationA: string;
   organisationB: string;
   learnerA: string;
@@ -23,6 +24,7 @@ const ids: FixtureIds = {
   userA: randomUUID(),
   userB: randomUUID(),
   userC: randomUUID(),
+  userD: randomUUID(),
   organisationA: randomUUID(),
   organisationB: randomUUID(),
   learnerA: randomUUID(),
@@ -56,9 +58,9 @@ beforeAll(async () => {
   await admin.query(
     `insert into auth.users (id, aud, role, email)
      values ($1, 'authenticated', 'authenticated', $2), ($3, 'authenticated', 'authenticated', $4),
-            ($5, 'authenticated', 'authenticated', $6)
+            ($5, 'authenticated', 'authenticated', $6), ($7, 'authenticated', 'authenticated', $8)
      on conflict (id) do nothing`,
-    [ids.userA, `${ids.userA}@reader-leader.test`, ids.userB, `${ids.userB}@reader-leader.test`, ids.userC, `${ids.userC}@reader-leader.test`],
+    [ids.userA, `${ids.userA}@reader-leader.test`, ids.userB, `${ids.userB}@reader-leader.test`, ids.userC, `${ids.userC}@reader-leader.test`, ids.userD, `${ids.userD}@reader-leader.test`],
   );
   await admin.query(
     `insert into public.organisations (id, name, region)
@@ -67,8 +69,8 @@ beforeAll(async () => {
   );
   await admin.query(
     `insert into public.memberships (user_id, organisation_id, role)
-     values ($1, $2, 'teacher_set'), ($3, $4, 'guardian'), ($5, $2, 'guardian')`,
-    [ids.userA, ids.organisationA, ids.userB, ids.organisationB, ids.userC],
+     values ($1, $2, 'teacher_set'), ($3, $4, 'guardian'), ($5, $2, 'guardian'), ($6, $2, 'content_steward')`,
+    [ids.userA, ids.organisationA, ids.userB, ids.organisationB, ids.userC, ids.userD],
   );
   await admin.query(
     `insert into public.learners (id, organisation_id, display_name, pronunciation_set_id, safe_label)
@@ -76,9 +78,9 @@ beforeAll(async () => {
     [ids.learnerA, ids.organisationA],
   );
   await admin.query(
-    `insert into public.passages (id, organisation_id, title, body, approval_status, rights_status, safety_status)
-     values ($1, $2, 'Fixture passage', 'The reader leader passage.', 'APPROVED', 'CLEARED', 'PASSED')`,
-    [ids.passageA, ids.organisationA],
+    `insert into public.passages (id, organisation_id, title, body, approval_status, rights_status, safety_status, creation_idempotency_key)
+     values ($1, $2, 'Fixture passage', 'The reader leader passage.', 'APPROVED', 'CLEARED', 'PASSED', $3)`,
+    [ids.passageA, ids.organisationA, `fixture-passage-${ids.passageA}`],
   );
   await admin.query(
     `insert into public.reading_sessions (id, organisation_id, learner_id, passage_id, idempotency_key, status)
@@ -120,7 +122,7 @@ afterAll(async () => {
   await admin.query("delete from public.learners where id = $1", [ids.learnerA]);
   await admin.query("delete from public.memberships where organisation_id in ($1, $2)", [ids.organisationA, ids.organisationB]);
   await admin.query("delete from public.organisations where id in ($1, $2)", [ids.organisationA, ids.organisationB]);
-  await admin.query("delete from auth.users where id in ($1, $2, $3)", [ids.userA, ids.userB, ids.userC]);
+  await admin.query("delete from auth.users where id in ($1, $2, $3, $4)", [ids.userA, ids.userB, ids.userC, ids.userD]);
   await admin.end();
 }, 30_000);
 
@@ -298,14 +300,14 @@ describe("Supabase Priority 1 consent lifecycle integration", () => {
       const pendingDeletionConsent = await admin.query("select status from public.consents where id = $1", [consentId]);
       expect(pendingDeletionConsent.rows[0]?.status).toBe("PENDING_DELETION");
       await admin.query(
-        `insert into public.audio_assets (id, learner_id, organisation_id, storage_object_hash, sha256, retention_until, deletion_request_id)
-         values ($1, $2, $3, $4, $5, now() + interval '30 days', $6)`,
-        [audioAssetId, ids.learnerA, ids.organisationA, audioHash, audioHash, deletionRequestId],
+        `insert into public.audio_assets (id, learner_id, organisation_id, storage_key, storage_object_hash, sha256, retention_until, deletion_request_id)
+         values ($1, $2, $3, $4, $5, $6, now() + interval '30 days', $7)`,
+        [audioAssetId, ids.learnerA, ids.organisationA, `private-audio/${audioAssetId}.webm`, audioHash, audioHash, deletionRequestId],
       );
       await admin.query(
-        `insert into public.derived_data_assets (id, learner_id, organisation_id, source_audio_asset_id, asset_kind, storage_object_hash, retention_until, deletion_request_id)
-         values ($1, $2, $3, $4, 'ALIGNMENT', $5, now() + interval '30 days', $6)`,
-        [derivedAssetId, ids.learnerA, ids.organisationA, audioAssetId, derivedHash, deletionRequestId],
+        `insert into public.derived_data_assets (id, learner_id, organisation_id, source_audio_asset_id, asset_kind, storage_key, storage_object_hash, retention_until, deletion_request_id)
+         values ($1, $2, $3, $4, 'ALIGNMENT', $5, $6, now() + interval '30 days', $7)`,
+        [derivedAssetId, ids.learnerA, ids.organisationA, audioAssetId, `private-derived/${derivedAssetId}.json`, derivedHash, deletionRequestId],
       );
       await admin.query(
         `insert into public.data_deletion_receipts (id, request_id, target_kind, target_reference_hash, outcome)
@@ -351,6 +353,43 @@ describe("Supabase Priority 1 consent lifecycle integration", () => {
       await admin.query("delete from public.consent_withdrawals where id = $1", [withdrawalId]);
       await admin.query("delete from public.consents where id = $1", [consentId]);
       await admin.query("delete from public.guardian_learner_links where guardian_id = $1 and learner_id = $2", [ids.userC, ids.learnerA]);
+    }
+  });
+});
+
+describe("Supabase content workflow integration", () => {
+  test("shows drafts only to content governance and exposes approved passages to teachers", async () => {
+    const passageId = randomUUID();
+    const eventId = randomUUID();
+    try {
+      await admin.query(
+        `insert into public.passages (id, organisation_id, title, body, approval_status, rights_status, safety_status, creation_idempotency_key)
+         values ($1, $2, 'Review fixture', 'This passage is under adult review.', 'DRAFT', 'UNREVIEWED', 'UNREVIEWED', $3)`,
+        [passageId, ids.organisationA, `draft-${passageId}`],
+      );
+      await admin.query(
+        `insert into public.content_review_events (id, passage_id, organisation_id, reviewer_id, action, idempotency_key)
+         values ($1, $2, $3, $4, 'DRAFT_CREATED', $5)`,
+        [eventId, passageId, ids.organisationA, ids.userD, `review-${eventId}`],
+      );
+      const teacherDrafts = await asUser(ids.userA, client => client.query("select id from public.passages where id = $1", [passageId]));
+      const stewardDrafts = await asUser(ids.userD, client => client.query("select id from public.passages where id = $1", [passageId]));
+      const stewardEvents = await asUser(ids.userD, client => client.query("select id from public.content_review_events where id = $1", [eventId]));
+      expect(teacherDrafts.rows).toHaveLength(0);
+      expect(stewardDrafts.rows).toHaveLength(1);
+      expect(stewardEvents.rows).toHaveLength(1);
+      await expect(asUser(ids.userD, client => client.query(
+        `insert into public.content_review_events (passage_id, organisation_id, reviewer_id, action, idempotency_key)
+         values ($1, $2, $3, 'RIGHTS_CLEARED', $4)`,
+        [passageId, ids.organisationA, ids.userD, `blocked-write-${eventId}`],
+      ))).rejects.toThrow();
+
+      await admin.query("update public.passages set rights_status = 'CLEARED', safety_status = 'PASSED', approval_status = 'APPROVED', approved_at = now(), approved_by = $2 where id = $1", [passageId, ids.userD]);
+      const teacherApproved = await asUser(ids.userA, client => client.query("select id from public.passages where id = $1", [passageId]));
+      expect(teacherApproved.rows).toHaveLength(1);
+    } finally {
+      await admin.query("delete from public.content_review_events where id = $1", [eventId]);
+      await admin.query("delete from public.passages where id = $1", [passageId]);
     }
   });
 });

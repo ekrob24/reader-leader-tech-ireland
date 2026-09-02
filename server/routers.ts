@@ -17,6 +17,8 @@ import { ReaderLeaderContractBoundaryError } from "./reader-leader/contract-boun
 import { TRPCError } from "@trpc/server";
 import { RecordGuardianConsentInput, RequestDataDeletionInput, WithdrawGuardianConsentInput, DataDeletionRequestId } from "@shared/consent-lifecycle";
 import { getDeletionStatus, getRetentionEligibility, recordGuardianConsent, requestDataDeletion, withdrawGuardianConsent } from "./reader-leader/consent-lifecycle";
+import { ApprovePassageInput, ContentOrganisationInput, CreatePassageDraftInput, RetirePassageInput, SetPassageRightsInput, SetPassageSafetyInput } from "@shared/content-workflow";
+import { approvePassage, createPassageDraft, getContentWorkflowOverview, listContentOrganisations, retirePassage, setPassageRights, setPassageSafety } from "./reader-leader/content-workflow";
 
 async function readLearnerSafetyData<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -56,6 +58,15 @@ export const appRouter = router({
     requestDataDeletion: protectedProcedure.input(RequestDataDeletionInput).mutation(({ ctx, input }) => requestDataDeletion(ctx.user, input)),
     retentionEligibility: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => getRetentionEligibility(ctx.user, input.learnerId)),
     deletionStatus: protectedProcedure.input(z.object({ requestId: DataDeletionRequestId })).query(({ ctx, input }) => getDeletionStatus(ctx.user, input.requestId)),
+  }),
+  contentWorkflow: router({
+    organisations: protectedProcedure.query(({ ctx }) => listContentOrganisations(ctx.user)),
+    overview: protectedProcedure.input(ContentOrganisationInput).query(({ ctx, input }) => getContentWorkflowOverview(ctx.user, input.organisationId)),
+    createDraft: protectedProcedure.input(CreatePassageDraftInput).mutation(({ ctx, input }) => createPassageDraft(ctx.user, input)),
+    setRights: protectedProcedure.input(SetPassageRightsInput).mutation(({ ctx, input }) => setPassageRights(ctx.user, input)),
+    setSafety: protectedProcedure.input(SetPassageSafetyInput).mutation(({ ctx, input }) => setPassageSafety(ctx.user, input)),
+    approve: protectedProcedure.input(ApprovePassageInput).mutation(({ ctx, input }) => approvePassage(ctx.user, input)),
+    retire: protectedProcedure.input(RetirePassageInput).mutation(({ ctx, input }) => retirePassage(ctx.user, input)),
   }),
   readerLeader: router({
     preview: publicProcedure.query(async () => {

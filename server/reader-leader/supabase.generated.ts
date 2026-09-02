@@ -17,6 +17,7 @@ export type DeletionRequestStatus = "REQUESTED" | "PROCESSING" | "COMPLETED" | "
 export type DeletionTargetKind = "AUDIO_ASSET" | "DERIVED_DATA";
 export type DeletionReceiptOutcome = "DELETED" | "NOT_FOUND" | "BLOCKED";
 export type LifecycleAuditAction = "GUARDIAN_CONSENT_RECORDED" | "GUARDIAN_CONSENT_WITHDRAWN" | "DATA_DELETION_REQUESTED" | "AUDIO_DELETION_VERIFIED" | "DERIVED_DATA_DELETION_VERIFIED";
+export type ContentReviewAction = "DRAFT_CREATED" | "RIGHTS_CLEARED" | "RIGHTS_BLOCKED" | "SAFETY_PASSED" | "SAFETY_BLOCKED" | "APPROVED" | "RETIRED";
 
 type NoRelationships = [];
 
@@ -66,15 +67,15 @@ export interface Database {
         Relationships: NoRelationships;
       };
       audio_assets: {
-        Row: { id: string; learner_id: string; organisation_id: string; storage_object_hash: string; sha256: string; retention_until: string; deleted_at: string | null; deletion_request_id: string | null; created_at: string };
-        Insert: { id?: string; learner_id: string; organisation_id: string; storage_object_hash: string; sha256: string; retention_until: string; deleted_at?: string | null; deletion_request_id?: string | null; created_at?: string };
-        Update: { deleted_at?: string | null; deletion_request_id?: string | null };
+        Row: { id: string; learner_id: string; organisation_id: string; storage_key: string | null; storage_object_hash: string; sha256: string; retention_until: string; deleted_at: string | null; deletion_request_id: string | null; created_at: string };
+        Insert: { id?: string; learner_id: string; organisation_id: string; storage_key?: string | null; storage_object_hash: string; sha256: string; retention_until: string; deleted_at?: string | null; deletion_request_id?: string | null; created_at?: string };
+        Update: { storage_key?: string | null; deleted_at?: string | null; deletion_request_id?: string | null };
         Relationships: NoRelationships;
       };
       derived_data_assets: {
-        Row: { id: string; learner_id: string; organisation_id: string; source_audio_asset_id: string | null; asset_kind: "SPEECH_ASSESSMENT" | "ALIGNMENT" | "DECISION_TRACE"; storage_object_hash: string | null; retention_until: string; deleted_at: string | null; deletion_request_id: string | null; created_at: string };
-        Insert: { id?: string; learner_id: string; organisation_id: string; source_audio_asset_id?: string | null; asset_kind: "SPEECH_ASSESSMENT" | "ALIGNMENT" | "DECISION_TRACE"; storage_object_hash?: string | null; retention_until: string; deleted_at?: string | null; deletion_request_id?: string | null; created_at?: string };
-        Update: { deleted_at?: string | null; deletion_request_id?: string | null };
+        Row: { id: string; learner_id: string; organisation_id: string; source_audio_asset_id: string | null; asset_kind: "SPEECH_ASSESSMENT" | "ALIGNMENT" | "DECISION_TRACE"; storage_key: string | null; storage_object_hash: string | null; retention_until: string; deleted_at: string | null; deletion_request_id: string | null; created_at: string };
+        Insert: { id?: string; learner_id: string; organisation_id: string; source_audio_asset_id?: string | null; asset_kind: "SPEECH_ASSESSMENT" | "ALIGNMENT" | "DECISION_TRACE"; storage_key?: string | null; storage_object_hash?: string | null; retention_until: string; deleted_at?: string | null; deletion_request_id?: string | null; created_at?: string };
+        Update: { storage_key?: string | null; deleted_at?: string | null; deletion_request_id?: string | null };
         Relationships: NoRelationships;
       };
       data_deletion_receipts: {
@@ -90,9 +91,15 @@ export interface Database {
         Relationships: NoRelationships;
       };
       passages: {
-        Row: { id: string; organisation_id: string; title: string; body: string; version: number; region_tags: string[]; phonics_profile: Json; approval_status: "DRAFT" | "APPROVED" | "RETIRED"; rights_status: "UNREVIEWED" | "CLEARED" | "BLOCKED"; safety_status: "UNREVIEWED" | "PASSED" | "BLOCKED"; created_at: string };
-        Insert: { id?: string; organisation_id: string; title: string; body: string; version?: number; region_tags?: string[]; phonics_profile?: Json; approval_status?: "DRAFT" | "APPROVED" | "RETIRED"; rights_status?: "UNREVIEWED" | "CLEARED" | "BLOCKED"; safety_status?: "UNREVIEWED" | "PASSED" | "BLOCKED"; created_at?: string };
-        Update: { id?: string; organisation_id?: string; title?: string; body?: string; version?: number; region_tags?: string[]; phonics_profile?: Json; approval_status?: "DRAFT" | "APPROVED" | "RETIRED"; rights_status?: "UNREVIEWED" | "CLEARED" | "BLOCKED"; safety_status?: "UNREVIEWED" | "PASSED" | "BLOCKED"; created_at?: string };
+        Row: { id: string; organisation_id: string; title: string; body: string; version: number; region_tags: string[]; phonics_profile: Json; approval_status: "DRAFT" | "APPROVED" | "RETIRED"; rights_status: "UNREVIEWED" | "CLEARED" | "BLOCKED"; safety_status: "UNREVIEWED" | "PASSED" | "BLOCKED"; approved_at: string | null; approved_by: string | null; creation_idempotency_key: string; created_at: string };
+        Insert: { id?: string; organisation_id: string; title: string; body: string; version?: number; region_tags?: string[]; phonics_profile?: Json; approval_status?: "DRAFT" | "APPROVED" | "RETIRED"; rights_status?: "UNREVIEWED" | "CLEARED" | "BLOCKED"; safety_status?: "UNREVIEWED" | "PASSED" | "BLOCKED"; approved_at?: string | null; approved_by?: string | null; creation_idempotency_key: string; created_at?: string };
+        Update: { id?: string; organisation_id?: string; title?: string; body?: string; version?: number; region_tags?: string[]; phonics_profile?: Json; approval_status?: "DRAFT" | "APPROVED" | "RETIRED"; rights_status?: "UNREVIEWED" | "CLEARED" | "BLOCKED"; safety_status?: "UNREVIEWED" | "PASSED" | "BLOCKED"; approved_at?: string | null; approved_by?: string | null; creation_idempotency_key?: string; created_at?: string };
+        Relationships: NoRelationships;
+      };
+      content_review_events: {
+        Row: { id: string; passage_id: string; organisation_id: string; reviewer_id: string; action: ContentReviewAction; idempotency_key: string; created_at: string };
+        Insert: { id?: string; passage_id: string; organisation_id: string; reviewer_id: string; action: ContentReviewAction; idempotency_key: string; created_at?: string };
+        Update: never;
         Relationships: NoRelationships;
       };
       reading_sessions: {
@@ -149,7 +156,7 @@ export interface Database {
       is_org_member: { Args: { target_org: string }; Returns: boolean };
       has_role: { Args: { target_org: string; allowed: ReaderLeaderRole[] }; Returns: boolean };
     };
-    Enums: { app_role: ReaderLeaderRole; session_status: SessionStatus; action: DecisionAction; consent_status: ConsentStatus; withdrawal_reason: WithdrawalReason; deletion_scope: DeletionScope; deletion_request_status: DeletionRequestStatus; deletion_target_kind: DeletionTargetKind; deletion_receipt_outcome: DeletionReceiptOutcome; lifecycle_audit_action: LifecycleAuditAction };
+    Enums: { app_role: ReaderLeaderRole; session_status: SessionStatus; action: DecisionAction; consent_status: ConsentStatus; withdrawal_reason: WithdrawalReason; deletion_scope: DeletionScope; deletion_request_status: DeletionRequestStatus; deletion_target_kind: DeletionTargetKind; deletion_receipt_outcome: DeletionReceiptOutcome; lifecycle_audit_action: LifecycleAuditAction; content_review_action: ContentReviewAction };
     CompositeTypes: { [_ in never]: never };
   };
 }

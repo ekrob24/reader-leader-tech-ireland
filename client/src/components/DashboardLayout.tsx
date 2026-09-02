@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { BookOpenCheck, LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -30,6 +30,7 @@ import { Button } from "./ui/button";
 export const dashboardMenuItems = [
   { id: "evidence-desk", icon: LayoutDashboard, label: "Evidence desk", path: "/" },
   { id: "learner-safety", icon: Users, label: "Learner safety", path: "/learner-safety" },
+  { id: "content-workflow", icon: BookOpenCheck, label: "Content workflow", path: "/content-workflow" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
