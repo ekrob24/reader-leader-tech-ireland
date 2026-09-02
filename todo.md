@@ -83,3 +83,11 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add router-level cross-tenant override rejection where the reviewer belongs to a different organisation.
 - [x] Add router-level coverage for persisted-decision query membership and tenant boundaries.
 - [x] Add persisted-decision rejection coverage when reviewer membership exists only in a different organisation, then rerun final verification.
+
+## Bug fix: duplicate navigation key
+
+- [x] Fix duplicate React key warning caused by two dashboard navigation items sharing the `/` path key.
+- [x] Verify TypeScript, complete Vitest suite, and browser console show no duplicate-key warning; the post-fix console window is clean.
+- [x] Save a checkpoint containing the verified fix.
+- [x] Add a deterministic navigation regression test asserting dashboard item keys are unique and rerun final verification.
+- [ ] Save a new checkpoint after the duplicate-navigation-key fix and deterministic regression test are complete.
