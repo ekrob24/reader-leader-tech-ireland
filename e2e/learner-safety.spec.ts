@@ -151,6 +151,10 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("The draft lane", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Clear rights" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Pass safety" })).toBeVisible();
+    await expect(page.getByText("0 of 3 gates", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /Needs rights 1/i }).click();
+    await expect(page.getByText("The draft lane", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Rights: UNREVIEWED/)).toBeVisible();
   });
 
   test("authenticated adults can review the consent-gated mock session and safe analysis trace", async ({ page }) => {
@@ -159,13 +163,18 @@ test.describe("authenticated learner safety navigation", () => {
     await page.getByText("Session demo", { exact: true }).click();
     await expect(page).toHaveURL(/\/session-demo$/);
     await expect(page.getByRole("heading", { name: /Demonstrate the safety path/i })).toBeVisible();
-    await expect(page.getByText("Mock data only", { exact: true })).toBeVisible();
+    await expect(page.getByText("Synthetic only", { exact: true })).toBeVisible();
     await expect(page.getByText("Consent-gated session", { exact: true })).toBeVisible();
     await expect(page.getByText("Mock upload metadata", { exact: true })).toBeVisible();
-    await expect(page.getByText("Safe trace timeline", { exact: true })).toBeVisible();
+    await expect(page.getByText("Interactive safe trace", { exact: true })).toBeVisible();
     await expect(page.getByText("Active guardian consent was verified before mock processing.", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Run deterministic mock analysis" })).toBeVisible();
     await expect(page.getByText(/does not capture or transmit a recording/i)).toBeVisible();
+    await page.getByRole("switch", { name: "Enable Demo Mode" }).click();
+    await expect(page.getByRole("status")).toContainText("Demo Mode is on.");
+    await expect(page.getByText("Synthetic file preset", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /Session consent checked/i }).click();
+    await expect(page.getByText("Active guardian consent was verified before mock processing.", { exact: true })).toBeVisible();
   });
 
   test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {

@@ -290,3 +290,13 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add workflow guidance in the content approval UI/docs for content steward drafting/review and teacher approved-passage selection.
 - [x] Add unit, integration, router, and Playwright coverage; run TypeScript, full tests, and visual verification.
 - [x] Document the mock-only boundary, demo script, current build status, and save a checkpoint.
+
+## Hackathon presentation polish: Demo Mode, approval filters, and trace visualization
+
+- [x] Inspect the current session demo, content workflow, chart components, and browser-test setup.
+- [x] Add a clearly labelled Demo Mode toggle that populates only synthetic presentation values and can be turned off.
+- [x] Add visual passage-review status indicators and filters for actionable pending approval selections.
+- [x] Add interactive, accessible visual timeline controls for deterministic mock analysis traces.
+- [x] Add Vitest and Playwright coverage for demo mode, filtering, status indicators, and trace timeline behavior.
+- [x] Run TypeScript, the full test suites, and desktop/mobile visual verification: 70 Vitest tests and 10 Playwright tests pass.
+- [x] Document the presentation controls and save a checkpoint.

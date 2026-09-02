@@ -30,4 +30,14 @@ describe("content workflow contracts", () => {
     expect(overview.approvedPassages).toHaveLength(0);
     expect(overview.reviewQueue[0]?.canApprove).toBe(true);
   });
+
+  it("keeps approved passage records in teacher selection rather than pending review", () => {
+    const overview = ContentWorkflowOverview.parse({
+      organisation: { id: organisationId, name: "Review school", role: "content_steward", canGovernContent: true },
+      approvedPassages: [{ id: passageId, title: "Approved", body: "Approved adult text.", version: 1, regionTags: ["IE"], approvalStatus: "APPROVED", rightsStatus: "CLEARED", safetyStatus: "PASSED", approvedAt: "2026-09-03T10:00:00.000Z", canApprove: false }],
+      reviewQueue: [], reviewHistory: [],
+    });
+    expect(overview.approvedPassages).toHaveLength(1);
+    expect(overview.reviewQueue).toHaveLength(0);
+  });
 });

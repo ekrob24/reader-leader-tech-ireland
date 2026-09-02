@@ -104,7 +104,7 @@ export async function getContentWorkflowOverview(actor: ManusActor, organisation
   return ContentWorkflowOverview.parse({
     organisation,
     approvedPassages: passages.filter(item => item.approvalStatus === "APPROVED"),
-    reviewQueue: canGovern ? passages.filter(item => item.approvalStatus !== "RETIRED") : [],
+    reviewQueue: canGovern ? passages.filter(item => item.approvalStatus === "DRAFT") : [],
     reviewHistory: (events ?? []).map(event => ({ id: event.id, passageId: event.passage_id, action: event.action, createdAt: new Date(event.created_at).toISOString() })),
   });
 }
