@@ -229,3 +229,10 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add regression coverage for learner list and selected learner parsing.
 - [x] Run TypeScript, complete Vitest, Playwright, and learner-safety route verification: 50 Vitest tests and 7 Playwright tests pass.
 - [x] Save a checkpoint after verification.
+
+## Bug fix: learner-safety timeline contract normalization
+
+- [x] Normalize timeline rows from Supabase snake_case fields and database timestamp formats into the shared timeline contract.
+- [x] Add regression coverage for missing learnerId mapping and ISO datetime normalization.
+- [x] Run TypeScript, complete Vitest, Playwright, and browser-console verification; route renders and the reported Zod failure is absent from the verification run.
+- [x] Save a checkpoint after verification.

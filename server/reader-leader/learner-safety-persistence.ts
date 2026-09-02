@@ -13,6 +13,35 @@ export function parseLearnerRow(row: Record<string, unknown>) {
   });
 }
 
+export function normalizeIsoTimestamp(value: unknown, fieldName = "createdAt") {
+  const date = value instanceof Date ? value : typeof value === "string" ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) throw new Error(`Invalid ${fieldName} timestamp from Supabase`);
+  return date.toISOString();
+}
+
+export function parseTimelineRow(row: Record<string, unknown>) {
+  return TimelineEntry.parse({
+    id: row.id,
+    learnerId: row.learner_id ?? row.learnerId,
+    action: row.action,
+    status: row.status,
+    summary: row.summary,
+    createdAt: normalizeIsoTimestamp(row.created_at ?? row.createdAt),
+    overrideId: row.override_id ?? row.overrideId ?? null,
+  });
+}
+
+export function parseAuditRow(row: Record<string, unknown>) {
+  return AuditEntry.parse({
+    id: row.id,
+    actorId: row.actor_id ?? row.actorId,
+    learnerId: row.learner_id ?? row.learnerId,
+    eventType: row.event_type ?? row.eventType,
+    summary: row.summary,
+    createdAt: normalizeIsoTimestamp(row.created_at ?? row.createdAt),
+  });
+}
+
 async function membershipsFor(actor: ManusActor) {
   const userId = await resolveSupabaseUserId(actor);
   const { data, error } = await getSupabaseAdminClient().from("memberships").select("organisation_id, role").eq("user_id", userId);
@@ -43,7 +72,7 @@ export async function getLearnerTimelinePage(actor: ManusActor, input: TimelineP
   const to = from + input.pageSize - 1;
   const { data, count, error } = await getSupabaseAdminClient().from("learner_safety_decisions").select("id, learner_id, action, status, summary, created_at, override_id", { count: "exact" }).eq("learner_id", input.learnerId).order("created_at", { ascending: false }).range(from, to);
   if (error) throw new Error("Unable to load decision timeline");
-  const items = (data ?? []).map(row => TimelineEntry.parse({ ...row, createdAt: row.created_at, overrideId: row.override_id ?? null }));
+  const items = (data ?? []).map(row => parseTimelineRow(row as Record<string, unknown>));
   const total = count ?? items.length;
   return TimelinePage.parse({ items, page: input.page, pageSize: input.pageSize, total, nextPage: input.page * input.pageSize < total ? input.page + 1 : null });
 }
@@ -54,12 +83,12 @@ export async function getLearnerWorkspace(actor: ManusActor, learnerId: string):
   const client = getSupabaseAdminClient();
   const { data: decisions, error: decisionsError } = await client.from("learner_safety_decisions").select("id, learner_id, action, status, summary, created_at, override_id").eq("learner_id", learnerId).order("created_at", { ascending: false });
   if (decisionsError) throw new Error("Unable to load decision timeline");
-  const timeline = (decisions ?? []).map(row => TimelineEntry.parse({ ...row, createdAt: row.created_at, overrideId: row.override_id ?? null }));
+  const timeline = (decisions ?? []).map(row => parseTimelineRow(row as Record<string, unknown>));
   let audit: AuditEntry[] = [];
   if (canManage) {
     const { data: events, error: auditError } = await client.from("learner_safety_events").select("id, actor_id, learner_id, event_type, summary, created_at").eq("learner_id", learnerId).order("created_at", { ascending: false });
     if (auditError) throw new Error("Unable to load audit history");
-    audit = (events ?? []).map(row => AuditEntry.parse({ ...row, actorId: row.actor_id, eventType: row.event_type, createdAt: row.created_at }));
+    audit = (events ?? []).map(row => parseAuditRow(row as Record<string, unknown>));
   }
   void userId;
   return LearnerSafetyWorkspace.parse({ learner, timeline, audit, canManage });
@@ -72,5 +101,5 @@ export async function reverseOverride(actor: ManusActor, input: OverrideReversal
   if (!memberships.some(row => row.organisation_id === existing.organisation_id && teacherRoles.has(row.role))) throw new Error("Only authorised teachers can reverse overrides");
   const { data, error: insertError } = await getSupabaseAdminClient().from("learner_safety_events").insert({ learner_id: existing.learner_id, organisation_id: existing.organisation_id, actor_id: userId, event_type: "OVERRIDE_REVERSED", summary: input.reason, idempotency_key: input.idempotencyKey }).select("id, learner_id, actor_id, event_type, summary, created_at").single();
   if (insertError || !data) throw new Error(insertError?.code === "23505" ? "Reversal idempotency key already exists" : "Unable to append reversal");
-  return AuditEntry.parse({ ...data, actorId: data.actor_id, eventType: data.event_type, createdAt: data.created_at });
+  return parseAuditRow(data as Record<string, unknown>);
 }
