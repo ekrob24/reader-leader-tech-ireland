@@ -2,13 +2,38 @@ import { AppendOnlyOverrideInput } from "@shared/contracts/reader-leader";
 import { getSupabaseAdminClient } from "../supabase";
 
 const allowedReviewerRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export type ManusActor = {
+  openId: string;
+  email?: string | null;
+  name?: string | null;
+};
 export type ReviewerContext = { role: string; userId: string };
 
-export async function resolveSupabaseUserId(manusOpenId: string): Promise<string> {
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(manusOpenId)) return manusOpenId;
-  const { data, error } = await getSupabaseAdminClient().from("reader_leader_actor_links").select("supabase_user_id").eq("manus_open_id", manusOpenId).single();
-  if (error || !data?.supabase_user_id) throw new Error("Authenticated actor is not linked to a Supabase user");
-  return data.supabase_user_id;
+type ActorInput = string | ManusActor;
+
+function actorDetails(actor: ActorInput) {
+  return typeof actor === "string" ? { openId: actor, email: null, name: null } : actor;
+}
+
+export async function resolveSupabaseUserId(actor: ActorInput): Promise<string> {
+  const { openId, email } = actorDetails(actor);
+  if (uuidPattern.test(openId)) return openId;
+  const admin = getSupabaseAdminClient();
+  const { data, error } = await admin.from("reader_leader_actor_links").select("supabase_user_id").eq("manus_open_id", openId).maybeSingle();
+  if (data?.supabase_user_id) return data.supabase_user_id;
+  if (error && error.code !== "PGRST116") throw new Error("Unable to resolve authenticated actor link");
+  if (!email) throw new Error("Authenticated actor is not linked to a Supabase user");
+
+  const { data: users, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (usersError) throw new Error("Unable to resolve authenticated actor link");
+  const matchingUser = users.users.find(user => user.email?.toLowerCase() === email.toLowerCase());
+  if (!matchingUser) throw new Error("Authenticated actor is not linked to a Supabase user");
+
+  const { error: linkError } = await admin.from("reader_leader_actor_links").upsert({ manus_open_id: openId, supabase_user_id: matchingUser.id }, { onConflict: "manus_open_id" });
+  if (linkError) throw new Error("Unable to persist authenticated actor link");
+  return matchingUser.id;
 }
 
 export async function resolveDecisionOrganisation(decisionId: string): Promise<string> {
@@ -18,8 +43,8 @@ export async function resolveDecisionOrganisation(decisionId: string): Promise<s
   return organisationId;
 }
 
-export async function resolveReviewerContext(manusOpenId: string, organisationId: string): Promise<ReviewerContext> {
-  const userId = await resolveSupabaseUserId(manusOpenId);
+export async function resolveReviewerContext(actor: ActorInput, organisationId: string): Promise<ReviewerContext> {
+  const userId = await resolveSupabaseUserId(actor);
   const { data, error } = await getSupabaseAdminClient().from("memberships").select("user_id, role").eq("user_id", userId).eq("organisation_id", organisationId).maybeSingle();
   if (error || !data) throw new Error("No Reader Leader membership found for authenticated actor");
   return { userId: data.user_id, role: data.role };

@@ -30,10 +30,10 @@ export const appRouter = router({
 
   learnerSafety: router({
     overview: protectedProcedure.query(({ ctx }) => buildLearnerSafetyOverview(ctx.user.role)),
-    learners: protectedProcedure.query(({ ctx }) => listLearnersForActor(ctx.user.openId)),
-    workspace: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => getLearnerWorkspace(ctx.user.openId, input.learnerId)),
-    timeline: protectedProcedure.input(TimelinePageInput).query(({ ctx, input }) => getLearnerTimelinePage(ctx.user.openId, input)),
-    reverseOverride: protectedProcedure.input(OverrideReversalInput).mutation(({ ctx, input }) => reverseOverride(ctx.user.openId, input)),
+    learners: protectedProcedure.query(({ ctx }) => listLearnersForActor(ctx.user)),
+    workspace: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => getLearnerWorkspace(ctx.user, input.learnerId)),
+    timeline: protectedProcedure.input(TimelinePageInput).query(({ ctx, input }) => getLearnerTimelinePage(ctx.user, input)),
+    reverseOverride: protectedProcedure.input(OverrideReversalInput).mutation(({ ctx, input }) => reverseOverride(ctx.user, input)),
   }),
   readerLeader: router({
     preview: publicProcedure.query(async () => {
@@ -71,7 +71,7 @@ export const appRouter = router({
       .input(z.object({ decisionId: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
         const organisationId = await resolveDecisionOrganisation(input.decisionId);
-        const reviewer = await resolveReviewerContext(ctx.user.openId, organisationId);
+        const reviewer = await resolveReviewerContext(ctx.user, organisationId);
         const { data, error } = await getSupabaseAdminClient()
           .from("agent_decisions")
           .select("id, session_id, action, event_type, reason_code, confidence, evidence_refs, teacher_note, policy_version, trace_id, created_at")
@@ -84,7 +84,7 @@ export const appRouter = router({
       .input(AppendOnlyOverrideInput)
       .mutation(async ({ input, ctx }) => {
         const organisationId = await resolveDecisionOrganisation(input.agentDecisionId);
-        const reviewer = await resolveReviewerContext(ctx.user.openId, organisationId);
+        const reviewer = await resolveReviewerContext(ctx.user, organisationId);
         return persistHumanOverride(input, reviewer);
       }),
   }),

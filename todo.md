@@ -187,3 +187,38 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Run TypeScript, complete Vitest, Playwright, and authenticated route verification: 48 Vitest tests and 7 Playwright tests pass.
 - [x] Save a checkpoint after verification.
 - [x] Add a public Supabase project URL fallback for this configured Reader Leader project when managed runtime variables contain an invalid placeholder, and verify the authenticated route no longer emits the URL exception.
+
+## Bug fix: authenticated actor is not linked to Supabase
+
+- [x] Inspect actor-link migration, lookup helper, and the current authenticated Manus identity.
+- [x] Add a safe actor-link resolution path for existing Supabase identities without weakening tenant or role checks.
+- [x] Make missing-link behavior actionable and non-crashing in learner safety.
+- [x] Add regression coverage for linked and unlinked actors, including the current admin identity, through the actor-link and live RLS verification paths.
+- [x] Run TypeScript, complete Vitest, Playwright, and authenticated route verification.
+- [x] Save a checkpoint after verification; consolidated in the final mock-data/actor-link checkpoint.
+- [x] Update learner-safety router procedures to pass the full authenticated actor object required by actor-link resolution, then rerun type checking.
+
+## Approved option B: Supabase shadow-user provisioning
+
+- [x] Provisioning superseded: an existing confirmed Supabase Auth UID was supplied and verified instead of creating a shadow user.
+- [x] Persist the Manus-to-Supabase actor link and verify the target organisation membership and role.
+- [x] Verify first-login/linking behavior through the actor-link resolver and learner-safety access coverage.
+- [x] Run TypeScript, complete Vitest, Playwright, and authenticated route verification.
+- [x] Save a checkpoint after provisioning and verification; consolidated in the final mock-data/actor-link checkpoint.
+
+## Supabase actor-link UID supplied
+
+- [x] Verify the supplied Supabase Auth UID exists and belongs to the intended account.
+- [x] Persist the current Manus actor mapping to the supplied Supabase Auth UID.
+- [x] Verify organisation membership and learner-safety access after linking.
+- [x] Run TypeScript, complete Vitest, Playwright, and authenticated route verification.
+- [x] Save a checkpoint after verification; consolidated in the final mock-data/actor-link checkpoint.
+- [x] Resolve the supplied Supabase user’s missing Reader Leader organisation membership; do not assign an organisation or role without user confirmation; assigned the explicitly requested fictitious demo organisation as `school_admin`.
+
+## Mock organisation fixture
+
+- [x] Inspect the existing organisation, membership, learner, and actor-link schema.
+- [x] Create an explicitly fictitious organisation and teacher membership for the supplied Supabase user.
+- [x] Add clearly labelled fictitious learner, timeline, and audit fixture records if required by the route.
+- [x] Verify learner-safety access and role-based teacher controls against the mock data.
+- [x] Run relevant tests and save a checkpoint documenting the mock-data boundary.
