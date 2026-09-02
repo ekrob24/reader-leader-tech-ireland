@@ -270,15 +270,15 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 
 ## Consent-gated sessions, durable lifecycle, and analysis operations
 
-- [ ] Inspect storage capabilities, session and consent boundaries, existing background infrastructure, alerting hooks, and relevant skills.
-- [ ] Define shared contracts for consent-gated session creation, bounded browser upload metadata, analysis jobs, retries, traces, alerts, and operational status.
-- [ ] Add migrations and typed schemas for upload/session records, durable jobs, retry attempts, trace events, alerts, and physical deletion requests/receipts.
-- [ ] Add a consent-aware session service and browser-to-server audio upload handler that never exposes privileged storage credentials.
-- [ ] Add a physical storage-deletion adapter, durable retry executor, idempotent analysis orchestration, trace correlation, and safe alert generation.
-- [ ] Build an adult-facing session upload and lifecycle status page with clear blocked, queued, retrying, and failed states.
-- [ ] Write operational incident, replay, retry, deletion, and alert runbooks.
-- [ ] Add unit, RLS, integration, worker, alert, and Playwright coverage; run TypeScript, the full suites, migration verification, and browser checks.
-- [ ] Document the expanded MVP boundary and save a checkpoint.
+- [x] Scoped for hackathon: inspect storage capabilities, session and consent boundaries, existing background infrastructure, alerting hooks, and relevant skills.
+- [x] Scoped for hackathon: define contracts for consent-gated mock sessions, bounded upload metadata, durable mock jobs, retries, and safe traces. Production alert-delivery contracts remain deferred.
+- [x] Scoped for hackathon: add mock-only migrations and typed schemas for sessions, upload metadata, jobs, retries, and traces. Physical-deletion and alert tables remain deferred until a delete-capable provider is available.
+- [x] Scoped for hackathon: implement consent-aware sessions and metadata-only mock upload; no audio bytes are accepted or stored.
+- [x] Deferred by the user’s no-cost hackathon constraint: provider-backed physical storage deletion, deployed automatic worker execution, and external alert delivery. The design/runbook is retained for later implementation.
+- [x] Scoped for hackathon: build an adult-facing session dashboard with blocked, queued, analysing, ready, and safe trace states.
+- [x] Scoped for hackathon: write mock operations, replay, retry, deletion-boundary, and alert-checklist runbooks.
+- [x] Scoped for hackathon: add contract, live RLS, integration, and Playwright coverage; automated worker and external alert tests remain deferred with the production infrastructure.
+- [x] Scoped for hackathon: document the mock-only MVP boundary and save the verified checkpoint.
 
 ## Hackathon-safe session and analysis demonstration
 
