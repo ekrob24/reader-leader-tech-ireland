@@ -1,16 +1,20 @@
 import { getSupabaseAdminClient } from "../supabase";
 import { LearnerRecord, LearnerSafetyWorkspace, TimelineEntry, TimelinePage, TimelinePageInput, AuditEntry, OverrideReversalInput } from "@shared/learner-safety-persistence";
 import { ManusActor, resolveSupabaseUserId } from "./override-persistence";
+import { logContractBoundaryFailure, ReaderLeaderContractBoundaryError } from "./contract-boundary";
 
 const teacherRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
 
 export function parseLearnerRow(row: Record<string, unknown>) {
-  return LearnerRecord.parse({
+  const result = LearnerRecord.safeParse({
     id: row.id,
     displayName: row.display_name ?? row.displayName,
     safeLabel: row.safe_label ?? row.safeLabel,
     organisationId: row.organisation_id ?? row.organisationId,
   });
+  if (result.success) return result.data;
+  logContractBoundaryFailure("learner_row", result.error);
+  throw new ReaderLeaderContractBoundaryError("LEARNER_RECORD_INVALID", "learner_row");
 }
 
 export function normalizeIsoTimestamp(value: unknown, fieldName = "createdAt") {
@@ -20,26 +24,40 @@ export function normalizeIsoTimestamp(value: unknown, fieldName = "createdAt") {
 }
 
 export function parseTimelineRow(row: Record<string, unknown>) {
-  return TimelineEntry.parse({
-    id: row.id,
-    learnerId: row.learner_id ?? row.learnerId,
-    action: row.action,
-    status: row.status,
-    summary: row.summary,
-    createdAt: normalizeIsoTimestamp(row.created_at ?? row.createdAt),
-    overrideId: row.override_id ?? row.overrideId ?? null,
-  });
+  try {
+    const result = TimelineEntry.safeParse({
+      id: row.id,
+      learnerId: row.learner_id ?? row.learnerId,
+      action: row.action,
+      status: row.status,
+      summary: row.summary,
+      createdAt: normalizeIsoTimestamp(row.created_at ?? row.createdAt),
+      overrideId: row.override_id ?? row.overrideId ?? null,
+    });
+    if (result.success) return result.data;
+    logContractBoundaryFailure("timeline_row", result.error);
+  } catch (error) {
+    logContractBoundaryFailure("timeline_row", error);
+  }
+  throw new ReaderLeaderContractBoundaryError("TIMELINE_RECORD_INVALID", "timeline_row");
 }
 
 export function parseAuditRow(row: Record<string, unknown>) {
-  return AuditEntry.parse({
-    id: row.id,
-    actorId: row.actor_id ?? row.actorId,
-    learnerId: row.learner_id ?? row.learnerId,
-    eventType: row.event_type ?? row.eventType,
-    summary: row.summary,
-    createdAt: normalizeIsoTimestamp(row.created_at ?? row.createdAt),
-  });
+  try {
+    const result = AuditEntry.safeParse({
+      id: row.id,
+      actorId: row.actor_id ?? row.actorId,
+      learnerId: row.learner_id ?? row.learnerId,
+      eventType: row.event_type ?? row.eventType,
+      summary: row.summary,
+      createdAt: normalizeIsoTimestamp(row.created_at ?? row.createdAt),
+    });
+    if (result.success) return result.data;
+    logContractBoundaryFailure("audit_row", result.error);
+  } catch (error) {
+    logContractBoundaryFailure("audit_row", error);
+  }
+  throw new ReaderLeaderContractBoundaryError("AUDIT_RECORD_INVALID", "audit_row");
 }
 
 async function membershipsFor(actor: ManusActor) {

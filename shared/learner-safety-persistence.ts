@@ -3,6 +3,7 @@ import { z } from "zod";
 export const LearnerId = z.string().uuid();
 export const DecisionId = z.string().uuid();
 export const OverrideId = z.string().uuid();
+export const TIMELINE_INTEGRITY_MESSAGE = "Some timeline records need attention before this view can be shown.";
 
 export const LearnerRecord = z.object({
   id: LearnerId,

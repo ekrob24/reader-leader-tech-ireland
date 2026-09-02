@@ -11,8 +11,21 @@ import { z } from "zod";
 import { persistHumanOverride, resolveDecisionOrganisation, resolveReviewerContext } from "./reader-leader/override-persistence";
 import { getSupabaseAdminClient } from "./supabase";
 import { buildLearnerSafetyOverview } from "@shared/learner-safety";
-import { LearnerSelectionInput, TimelinePageInput, OverrideReversalInput } from "@shared/learner-safety-persistence";
+import { LearnerSelectionInput, TimelinePageInput, OverrideReversalInput, TIMELINE_INTEGRITY_MESSAGE } from "@shared/learner-safety-persistence";
 import { getLearnerWorkspace, getLearnerTimelinePage, listLearnersForActor, reverseOverride } from "./reader-leader/learner-safety-persistence";
+import { ReaderLeaderContractBoundaryError } from "./reader-leader/contract-boundary";
+import { TRPCError } from "@trpc/server";
+
+async function readLearnerSafetyData<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof ReaderLeaderContractBoundaryError && error.publicCode === "TIMELINE_RECORD_INVALID") {
+      throw new TRPCError({ code: "UNPROCESSABLE_CONTENT", message: TIMELINE_INTEGRITY_MESSAGE });
+    }
+    throw error;
+  }
+}
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -31,8 +44,8 @@ export const appRouter = router({
   learnerSafety: router({
     overview: protectedProcedure.query(({ ctx }) => buildLearnerSafetyOverview(ctx.user.role)),
     learners: protectedProcedure.query(({ ctx }) => listLearnersForActor(ctx.user)),
-    workspace: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => getLearnerWorkspace(ctx.user, input.learnerId)),
-    timeline: protectedProcedure.input(TimelinePageInput).query(({ ctx, input }) => getLearnerTimelinePage(ctx.user, input)),
+    workspace: protectedProcedure.input(LearnerSelectionInput).query(({ ctx, input }) => readLearnerSafetyData(() => getLearnerWorkspace(ctx.user, input.learnerId))),
+    timeline: protectedProcedure.input(TimelinePageInput).query(({ ctx, input }) => readLearnerSafetyData(() => getLearnerTimelinePage(ctx.user, input))),
     reverseOverride: protectedProcedure.input(OverrideReversalInput).mutation(({ ctx, input }) => reverseOverride(ctx.user, input)),
   }),
   readerLeader: router({

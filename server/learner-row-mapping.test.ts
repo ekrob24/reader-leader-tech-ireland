@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseAuditRow, parseLearnerRow, parseTimelineRow } from "./reader-leader/learner-safety-persistence";
 
 describe("Supabase row normalization", () => {
@@ -49,6 +49,7 @@ describe("Supabase row normalization", () => {
   });
 
   it("rejects rows missing required fields or with invalid timestamps", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     expect(() => parseLearnerRow({ id: "not-a-complete-row" })).toThrow();
     expect(() => parseTimelineRow({
       id: "33333333-3333-4333-8333-333333333333",
@@ -59,5 +60,6 @@ describe("Supabase row normalization", () => {
       created_at: "not-a-timestamp",
       override_id: null,
     })).toThrow();
+    warn.mockRestore();
   });
 });

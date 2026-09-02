@@ -1,7 +1,7 @@
 import { expect, Page, test } from "@playwright/test";
 
 type User = { id: number; openId: string; name: string; email: string; role: "admin" | "user" };
-type Scenario = "success" | "forbidden" | "empty" | "error";
+type Scenario = "success" | "forbidden" | "empty" | "error" | "timeline-integrity";
 
 const teacher: User = { id: 1, openId: "teacher-user", name: "Teacher Example", email: "teacher@example.com", role: "admin" };
 const viewer: User = { ...teacher, role: "user", name: "Viewer Example" };
@@ -39,6 +39,7 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
         return { result: { data: { json: workspaceFor(user.role === "admin") } } };
       }
       if (name === "learnerSafety.timeline") {
+        if (scenario === "timeline-integrity") return { error: { json: { message: "Some timeline records need attention before this view can be shown.", code: -32022, data: { code: "UNPROCESSABLE_CONTENT", httpStatus: 422, path: name } } } };
         timelineCalls += 1;
         const pageNumber = timelineCalls;
         const pageItems = pageNumber === 1 ? workspaceFor(user.role === "admin").timeline : [];
@@ -111,6 +112,15 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Safety workspace unavailable", { exact: true })).toBeVisible();
     await expect(page.getByText(/Invalid supabaseUrl/i)).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Retry loading" })).toBeVisible();
+  });
+
+  test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {
+    await authenticate(page, teacher, "timeline-integrity");
+    await openLearnerSafety(page);
+    await expect(page.getByRole("heading", { name: "Timeline record needs attention" })).toBeVisible();
+    await expect(page.getByText(/A saved decision is incomplete or uses an unsupported format/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Refresh timeline" })).toBeVisible();
+    await expect(page.getByText("Prompt suggested after a substitution.", { exact: true })).toHaveCount(0);
   });
 
   test("teacher can paginate the persisted decision timeline", async ({ page }) => {

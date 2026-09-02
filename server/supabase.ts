@@ -3,6 +3,9 @@ import {
   createContextClient,
 } from "@supabase/server/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./reader-leader/supabase.generated";
+
+export type ReaderLeaderSupabaseClient = SupabaseClient<Database>;
 
 export function parseSupabaseUrl(value: string | undefined): string | null {
   if (!value?.trim()) return null;
@@ -23,12 +26,12 @@ export function resolveSupabaseUrl(): string {
     ?? READER_LEADER_SUPABASE_URL;
 }
 
-export function getSupabaseAdminClient(): SupabaseClient {
+export function getSupabaseAdminClient(): ReaderLeaderSupabaseClient {
   const url = resolveSupabaseUrl();
   if (!process.env.SUPABASE_SECRET_KEY) {
     throw new Error("Supabase server configuration is incomplete");
   }
-  return createAdminClient({
+  return createAdminClient<Database>({
     env: {
       url,
       secretKeys: { default: process.env.SUPABASE_SECRET_KEY },
@@ -36,7 +39,7 @@ export function getSupabaseAdminClient(): SupabaseClient {
   });
 }
 
-export function getSupabaseUserClient(accessToken: string): SupabaseClient {
+export function getSupabaseUserClient(accessToken: string): ReaderLeaderSupabaseClient {
   const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const url = resolveSupabaseUrl();
   if (!accessToken.trim()) throw new Error("Supabase access token is required");
@@ -47,7 +50,7 @@ export function getSupabaseUserClient(accessToken: string): SupabaseClient {
   if (process.env.SUPABASE_JWKS_URL && !jwksUrl) {
     throw new Error("Supabase JWKS URL is invalid. Set SUPABASE_JWKS_URL to an HTTP or HTTPS endpoint.");
   }
-  return createContextClient({
+  return createContextClient<Database>({
     auth: { token: accessToken },
     env: {
       url,

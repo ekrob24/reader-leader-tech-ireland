@@ -236,3 +236,12 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add regression coverage for missing learnerId mapping and ISO datetime normalization.
 - [x] Run TypeScript, complete Vitest, Playwright, and browser-console verification; route renders and the reported Zod failure is absent from the verification run.
 - [x] Save a checkpoint after verification.
+
+## Contract safety, resilience, and build-status reconciliation
+
+- [x] Add typed Supabase database row definitions and use them at Reader Leader persistence boundaries.
+- [x] Add a safe, actionable learner-safety UI state for malformed or incomplete timeline records.
+- [x] Add structured, privacy-preserving server logging for contract-boundary failures.
+- [x] Reconcile `todo.md` presentation and document the current build status, completed scope, and next priorities.
+- [x] Add regression tests and run TypeScript, Vitest, Playwright, and visual verification: 53 Vitest tests and 8 Playwright tests pass.
+- [x] Save a checkpoint after verification.
