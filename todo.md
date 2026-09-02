@@ -125,7 +125,7 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add a distinct learner-safety empty state and separate forbidden access from generic load failure.
 - [x] Add Playwright coverage for forbidden and empty learner-safety states.
 - [x] Run explicit browser verification of the learner-safety route and record the result; Playwright verifies the unauthenticated OAuth redirect, teacher/viewer routing, forbidden state, and empty state.
-- [ ] Save a checkpoint after learner-safety implementation and verification.
+- [x] Save a checkpoint after learner-safety implementation and verification.
 - [x] Fix forbidden-state detection so a structured or message-level permission denial renders the restricted state in end-to-end tests.
 - [x] Add Playwright coverage for unauthenticated learner-safety behavior and narrow the verification note to evidence-backed assertions.
 - [x] Update unauthenticated Playwright coverage to assert the existing Manus OAuth redirect rather than an in-page sign-in heading.
