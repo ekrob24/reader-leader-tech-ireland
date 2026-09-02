@@ -165,17 +165,24 @@ describe("Supabase S2 RLS integration", () => {
   test("enforces reviewer ownership and actor-scoped audit reads", async () => {
     await asUser(ids.userA, async client => {
       await client.query(
-        `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason)
-         values ($1, $2, 'MODEL', 'Human review for integration test')`,
-        [ids.decisionA, ids.userA],
+        `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason, idempotency_key)
+         values ($1, $2, 'MODEL', 'Human review for integration test', $3)`,
+        [ids.decisionA, ids.userA, `override-${ids.decisionA}`],
       );
+      await expect(
+        client.query(
+          `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason, idempotency_key)
+           values ($1, $2, 'STAY_SILENT', 'Duplicate override should be rejected', $3)`,
+          [ids.decisionA, ids.userA, `override-${ids.decisionA}`],
+        ),
+      ).rejects.toThrow();
     });
 
     await expect(
       asUser(ids.userB, client =>
         client.query(
-          `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason)
-           values ($1, $2, 'MODEL', 'Cross-organisation guardian should be rejected')`,
+          `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason, idempotency_key)
+           values ($1, $2, 'MODEL', 'Cross-organisation guardian should be rejected', 'guardian-cross-org')`,
           [ids.decisionA, ids.userB],
         ),
       ),
@@ -184,12 +191,13 @@ describe("Supabase S2 RLS integration", () => {
     await expect(
       asUser(ids.userC, client =>
         client.query(
-          `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason)
-           values ($1, $2, 'MODEL', 'Same-organisation guardian should be rejected')`,
+          `insert into public.human_reviews (agent_decision_id, reviewer_id, override_action, reason, idempotency_key)
+           values ($1, $2, 'MODEL', 'Same-organisation guardian should be rejected', 'guardian-same-org')`,
           [ids.decisionA, ids.userC],
         ),
       ),
     ).rejects.toThrow();
+
 
     await expect(
       asUser(ids.userA, client =>

@@ -1,0 +1,3 @@
+# UI Verification Notes
+
+The S7 teacher evidence desk renders with the intended quiet editorial visual system at desktop and mobile widths. The dark evidence card provides clear hierarchy, confidence and action are legible, the child-safe preview is visibly separated from the adult briefing, and the S8 release gate is presented as a distinct status card. At 375px the header, evidence card, and safety badge remain readable without horizontal overflow. Loading skeletons and the actionable error card are implemented in the page code; the fixture preview intentionally keeps override submission disabled until a persisted decision and Supabase reviewer UUID are available.

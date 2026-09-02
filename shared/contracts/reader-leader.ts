@@ -231,6 +231,87 @@ export const PolicyResult = z.object({
 });
 export type PolicyResult = z.infer<typeof PolicyResult>;
 
+export const ChildFeedbackTemplate = z.enum([
+  "ENCOURAGE_RETRY",
+  "CELEBRATE_READING",
+  "WAIT_AND_LISTEN",
+  "ASK_TEACHER",
+]);
+export type ChildFeedbackTemplate = z.infer<typeof ChildFeedbackTemplate>;
+
+export const ChildSafeFeedback = z.object({
+  template: ChildFeedbackTemplate,
+  message: z.string().trim().max(180),
+  speak: z.boolean(),
+});
+export type ChildSafeFeedback = z.infer<typeof ChildSafeFeedback>;
+
+export const TeacherBriefing = z.object({
+  traceId: nonEmptyText,
+  headline: nonEmptyText.max(160),
+  summary: nonEmptyText.max(500),
+  action: Action,
+  confidence: boundedConfidence,
+  evidenceRefs: z.array(nonEmptyText).min(1),
+  canOverride: z.boolean(),
+});
+export type TeacherBriefing = z.infer<typeof TeacherBriefing>;
+
+export const AppendOnlyOverrideInput = z.object({
+  agentDecisionId: uuid,
+  reviewerId: uuid,
+  overrideAction: Action,
+  reason: z.string().trim().min(3).max(1000),
+  idempotencyKey: nonEmptyText.max(120),
+});
+export type AppendOnlyOverrideInput = z.infer<typeof AppendOnlyOverrideInput>;
+
+export const AppendOnlyOverride = AppendOnlyOverrideInput.extend({
+  id: uuid,
+  createdAt: timestamp,
+});
+export type AppendOnlyOverride = z.infer<typeof AppendOnlyOverride>;
+
+export const EvaluationCase = z.object({
+  id: nonEmptyText,
+  goldAction: Action,
+  predictedAction: Action,
+  selfCorrectionDetected: z.boolean(),
+  predictedInterrupted: z.boolean(),
+  speakerGroup: nonEmptyText,
+  overridden: z.boolean().default(false),
+});
+export type EvaluationCase = z.infer<typeof EvaluationCase>;
+
+export const EvaluationReport = z.object({
+  total: z.number().int().nonnegative(),
+  falseCorrectionRate: boundedConfidence,
+  missedErrorRate: boundedConfidence,
+  abstentionRate: boundedConfidence,
+  selfCorrectionCaptureRate: boundedConfidence,
+  overrideRate: boundedConfidence,
+  bySpeakerGroup: z.record(z.string(), z.object({
+    total: z.number().int().nonnegative(),
+    falseCorrectionRate: boundedConfidence,
+  })),
+});
+export type EvaluationReport = z.infer<typeof EvaluationReport>;
+
+export const RegressionThresholds = z.object({
+  maxFalseCorrectionRate: boundedConfidence,
+  maxMissedErrorRate: boundedConfidence,
+  minSelfCorrectionCaptureRate: boundedConfidence,
+});
+export type RegressionThresholds = z.infer<typeof RegressionThresholds>;
+
+export const RegressionGateResult = z.object({
+  passed: z.boolean(),
+  failures: z.array(nonEmptyText),
+  thresholds: RegressionThresholds,
+  report: EvaluationReport,
+});
+export type RegressionGateResult = z.infer<typeof RegressionGateResult>;
+
 export const S1S3ContractNames = z.enum([
   "EvidenceBundle",
   "FixtureEvidenceCase",
