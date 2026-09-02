@@ -159,7 +159,7 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add a confirmation dialog and required reason field before reversing an override.
 - [x] Add CI Playwright execution against deterministic seeded organisation fixtures (mocked tRPC boundary; no live credentials in CI).
 - [x] Re-run TypeScript, Vitest, Playwright, and browser verification after the follow-ups: 47 Vitest tests and 6 Playwright tests pass.
-- [ ] Save a fresh checkpoint containing the reconciled tracker and follow-up implementation.
+- [x] Save a fresh checkpoint containing the reconciled tracker and follow-up implementation.
 - [x] Update Playwright reversal coverage for the new confirmation dialog and required reason field, then rerun E2E verification.
 
 ## Follow-up verification corrections
