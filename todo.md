@@ -310,3 +310,10 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add a trace-summary download that excludes learner names, file data, and other identifying information.
 - [x] Add unit and Playwright coverage; run TypeScript, full tests, and responsive visual verification: 72 Vitest tests and 10 Playwright tests pass.
 - [x] Document the presentation controls and save a checkpoint.
+
+## Product realignment: functional child-reading workflow
+
+- [x] Reconcile the original Reader Leader specification, current build status, and the functional gaps identified by the user.
+- [x] Define the intended end-to-end guardian, teacher, child-reader, content, safety, and review experience in plain language.
+- [x] Create a staged child-reading delivery plan with functional acceptance criteria, safety gates, and explicit mock-versus-production boundaries.
+- [x] Recommend the smallest next build slice that creates a genuinely usable reading journey rather than another presentation control.
