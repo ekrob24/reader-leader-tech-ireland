@@ -120,7 +120,7 @@ function DashboardLayoutContent({
   const notificationOrganisationId = organisations.data?.[0]?.id;
   const notificationInput = useMemo(() => ({ organisationId: notificationOrganisationId ?? "00000000-0000-4000-8000-000000000000", limit: 12 }), [notificationOrganisationId]);
   const sessionHistory = trpc.hackathonDemo.teacherHistory.useQuery(notificationInput, { enabled: Boolean(notificationOrganisationId), refetchInterval: 10_000 });
-  const reviewReadyCount = sessionHistory.data?.items.filter(item => item.reviewStatus === "READY_FOR_REVIEW").length ?? 0;
+  const reviewReadyCount = sessionHistory.data?.items.filter(item => item.reviewStatus === "READY_FOR_REVIEW" && !item.acknowledgedAt).length ?? 0;
 
   useEffect(() => {
     if (isCollapsed) {

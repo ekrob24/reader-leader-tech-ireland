@@ -19,8 +19,8 @@ import { RecordGuardianConsentInput, RequestDataDeletionInput, WithdrawGuardianC
 import { getDeletionStatus, getRetentionEligibility, recordGuardianConsent, requestDataDeletion, withdrawGuardianConsent } from "./reader-leader/consent-lifecycle";
 import { ApprovePassageInput, ContentOrganisationInput, CreatePassageDraftInput, RetirePassageInput, SetPassageRightsInput, SetPassageSafetyInput } from "@shared/content-workflow";
 import { approvePassage, createPassageDraft, getContentWorkflowOverview, listContentOrganisations, retirePassage, setPassageRights, setPassageSafety } from "./reader-leader/content-workflow";
-import { CreateHackathonSessionInput, HackathonSessionIdInput, RecordMockUploadInput, ResetHackathonDemoInput, RetryMockAnalysisInput, RunMockAnalysisInput, TeacherSessionHistoryInput } from "@shared/hackathon-session-demo";
-import { createHackathonSession, getHackathonDemoSummary, getHackathonSession, getTeacherSessionHistory, recordMockUpload, resetHackathonDemoSessions, retryMockAnalysis, runMockAnalysis } from "./reader-leader/hackathon-session-demo";
+import { AcknowledgeTeacherSessionAlertInput, CreateHackathonSessionInput, HackathonSessionIdInput, RecordMockUploadInput, ResetHackathonDemoInput, RetryMockAnalysisInput, RunMockAnalysisInput, TeacherSessionHistoryInput } from "@shared/hackathon-session-demo";
+import { acknowledgeTeacherSessionAlert, createHackathonSession, getHackathonDemoSummary, getHackathonSession, getTeacherSessionHistory, recordMockUpload, resetHackathonDemoSessions, retryMockAnalysis, runMockAnalysis } from "./reader-leader/hackathon-session-demo";
 import { ChildSessionActionInput, ChildSessionTokenInput, LaunchChildSessionInput, TeacherSessionReviewInput } from "@shared/child-reading-journey";
 import { completeChildReading, getChildReadingView, getTeacherMockReview, launchChildSession, requestChildHelp, startChildReading } from "./reader-leader/child-reading-journey";
 
@@ -80,6 +80,7 @@ export const appRouter = router({
     retryMockAnalysis: protectedProcedure.input(RetryMockAnalysisInput).mutation(({ ctx, input }) => retryMockAnalysis(ctx.user, input)),
     session: protectedProcedure.input(HackathonSessionIdInput).query(({ ctx, input }) => getHackathonSession(ctx.user, input.sessionId)),
     teacherHistory: protectedProcedure.input(TeacherSessionHistoryInput).query(({ ctx, input }) => getTeacherSessionHistory(ctx.user, input)),
+    acknowledgeReview: protectedProcedure.input(AcknowledgeTeacherSessionAlertInput).mutation(({ ctx, input }) => acknowledgeTeacherSessionAlert(ctx.user, input)),
     resetSyntheticSessions: protectedProcedure.input(ResetHackathonDemoInput).mutation(({ ctx, input }) => resetHackathonDemoSessions(ctx.user, input)),
   }),
   childJourney: router({

@@ -17,6 +17,7 @@ const supportedMigrations = new Set([
   "20260910000000_reader_leader_hackathon_session_demo.sql",
   "20260911000000_reader_leader_hackathon_demo_reset.sql",
   "20260912000000_reader_leader_synthetic_child_journey.sql",
+  "20260913000000_reader_leader_teacher_alert_acknowledgements.sql",
 ]);
 const migrationName = process.argv[2] ?? "20260905000000_reader_leader_consent_lifecycle.sql";
 if (!supportedMigrations.has(migrationName)) throw new Error("Unsupported Supabase migration name");

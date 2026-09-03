@@ -47,6 +47,12 @@ The child canvas provides **Save my place** and **Return to saved part** control
 
 The adult session review includes **Print safe summary**. Print media styling removes the dashboard navigation and follow-up controls while retaining the synthetic-only label, passage title, deterministic mock event cards, and the statement that a teacher retains final judgement. It does not include learner labels, session IDs, child links, audio references, or storage metadata.
 
+## Digital safe summary and alert acknowledgement
+
+Authorised adults can also select **Download safe PDF** from the review screen. The browser generates a PDF containing the synthetic classification, passage title, deterministic mock event cards, suggested adult actions, and the teacher-judgement boundary. It deliberately excludes learner identifiers, session IDs, child links, audio references, transcripts, and storage metadata.
+
+Each completed synthetic session can be acknowledged in the teacher history. This records an append-only, teacher-specific acknowledgement and removes the item from that teacher’s review-ready navigation count. The completion record and review history remain unchanged; another authorised teacher still sees their own alert until they acknowledge it. The child can use **Clear saved place** to remove only the current synthetic session’s browser-local bookmark.
+
 ## Production boundary
 
 This slice is intentionally **not** a live reading assessment. It does not activate a microphone, store bytes, upload audio, call a speech provider, calculate reading metrics, or infer a diagnosis. Those features remain blocked until private storage, physical deletion, provider agreements, durable task infrastructure, and safeguarding approval are complete.

@@ -74,6 +74,10 @@ export const TeacherSessionHistoryInput = z.object({
   limit: z.number().int().min(1).max(25).default(12),
 });
 export type TeacherSessionHistoryInput = z.infer<typeof TeacherSessionHistoryInput>;
+export const AcknowledgeTeacherSessionAlertInput = z.object({ sessionId: DemoId, idempotencyKey });
+export type AcknowledgeTeacherSessionAlertInput = z.infer<typeof AcknowledgeTeacherSessionAlertInput>;
+export const TeacherSessionAlertAcknowledgement = z.object({ sessionId: DemoId, acknowledgedAt: z.string().datetime() });
+export type TeacherSessionAlertAcknowledgement = z.infer<typeof TeacherSessionAlertAcknowledgement>;
 export const TeacherSessionHistoryItem = z.object({
   id: DemoId,
   learnerLabel: z.string().trim().min(1).max(80),
@@ -83,6 +87,7 @@ export const TeacherSessionHistoryItem = z.object({
   reviewStatus: z.enum(["NOT_READY", "READY_FOR_REVIEW"]),
   createdAt: z.string().datetime(),
   completedAt: z.string().datetime().nullable(),
+  acknowledgedAt: z.string().datetime().nullable().default(null),
 });
 export type TeacherSessionHistoryItem = z.infer<typeof TeacherSessionHistoryItem>;
 export const TeacherSessionHistory = z.object({ organisationId: DemoId, items: z.array(TeacherSessionHistoryItem) });

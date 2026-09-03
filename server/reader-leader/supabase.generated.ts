@@ -129,6 +129,12 @@ export interface Database {
         Update: { id?: string; session_id?: string; token_hash?: string; expires_at?: string; started_at?: string | null; completed_at?: string | null; help_requested_at?: string | null; created_by?: string; created_at?: string };
         Relationships: NoRelationships;
       };
+      teacher_session_alert_acknowledgements: {
+        Row: { id: string; session_id: string; teacher_id: string; idempotency_key: string; acknowledged_at: string };
+        Insert: { id?: string; session_id: string; teacher_id: string; idempotency_key: string; acknowledged_at?: string };
+        Update: never;
+        Relationships: NoRelationships;
+      };
       mock_word_events: {
         Row: { id: string; session_id: string; token_index: number; reference_word: string; event_type: "SUBSTITUTION" | "SELF_CORRECTION" | "HESITATION"; suggested_action: DecisionAction; teacher_note: string; created_at: string };
         Insert: { id?: string; session_id: string; token_index: number; reference_word: string; event_type: "SUBSTITUTION" | "SELF_CORRECTION" | "HESITATION"; suggested_action: DecisionAction; teacher_note: string; created_at?: string };

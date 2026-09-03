@@ -355,3 +355,13 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add a print-focused adult review summary that contains only safe, teacher-authorised mock review content.
 - [x] Add unit, router, and Playwright coverage; run TypeScript, full tests, and desktop/mobile visual verification: 78 Vitest tests and 11 Playwright tests pass.
 - [x] Document the feature boundaries and save a checkpoint.
+
+## Reading journey follow-through: PDF export, bookmark clear, and alert acknowledgement
+
+- [x] Inspect PDF export options, current child bookmark storage, teacher session history, and authentication boundaries.
+- [x] Add privacy-safe PDF export and alert-acknowledgement contracts with safe synthetic-session persistence.
+- [x] Add a teacher-only acknowledgement action that removes reviewed synthetic sessions from the notification count but preserves history/audit evidence.
+- [x] Add a child-local clear-bookmark control that removes only the current synthetic session’s saved place.
+- [x] Add a teacher-authorised PDF summary export containing only safe synthetic review content and no identifiers or raw audio metadata.
+- [x] Add unit and Playwright coverage; run TypeScript, full tests, and visual verification: 79 Vitest tests and 11 Playwright tests pass.
+- [x] Document the feature boundaries and save a checkpoint.

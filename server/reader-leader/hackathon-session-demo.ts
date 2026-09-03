@@ -8,6 +8,8 @@ import {
   ResetHackathonDemoResult,
   RetryMockAnalysisInput,
   RunMockAnalysisInput,
+  AcknowledgeTeacherSessionAlertInput,
+  TeacherSessionAlertAcknowledgement,
   TeacherSessionHistory,
   TeacherSessionHistoryInput,
 } from "@shared/hackathon-session-demo";
@@ -20,6 +22,7 @@ type Membership = { user_id: string; organisation_id: string; role: string };
 type SessionRow = { id: string; learner_id: string; passage_id: string; organisation_id: string; status: "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED" | "CHILD_READING" | "COMPLETED" };
 type JobRow = { id: string; session_id: string; status: "QUEUED" | "RUNNING" | "READY" | "FAILED" | "RETRYING" | "BLOCKED"; attempt_count: number; trace_id: string };
 type HistorySessionRow = SessionRow & { created_at: string; completed_at: string | null };
+type AlertAcknowledgementRow = { session_id: string; teacher_id: string; acknowledged_at: string };
 
 export function hasActiveAssessmentConsent(consent: { status: string; retention_until: string } | null | undefined, now = Date.now()) {
   return Boolean(consent && consent.status === "ACTIVE" && new Date(consent.retention_until).getTime() > now);
@@ -143,23 +146,38 @@ export async function getHackathonDemoSummary(actor: ManusActor, organisationId:
 }
 
 export async function getTeacherSessionHistory(actor: ManusActor, input: TeacherSessionHistoryInput) {
-  await staffForOrganisation(actor, input.organisationId);
+  const membership = await staffForOrganisation(actor, input.organisationId);
   const client = getSupabaseAdminClient();
   const { data, error } = await client.from("reading_sessions").select("id, learner_id, passage_id, organisation_id, status, created_at, completed_at").eq("organisation_id", input.organisationId).eq("demo_mode", true).order("created_at", { ascending: false }).limit(input.limit);
   if (error) throw new Error("Unable to load teacher session history");
   const sessions = (data ?? []) as HistorySessionRow[];
   const learnerIds = Array.from(new Set(sessions.map(session => session.learner_id)));
   const passageIds = Array.from(new Set(sessions.map(session => session.passage_id)));
-  const [{ data: learners }, { data: passages }] = await Promise.all([
+  const [{ data: learners }, { data: passages }, { data: acknowledgements }] = await Promise.all([
     learnerIds.length ? client.from("learners").select("id, safe_label").in("id", learnerIds) : Promise.resolve({ data: [] as Array<{ id: string; safe_label: string }> }),
     passageIds.length ? client.from("passages").select("id, title").in("id", passageIds) : Promise.resolve({ data: [] as Array<{ id: string; title: string }> }),
+    sessions.length ? client.from("teacher_session_alert_acknowledgements").select("session_id, teacher_id, acknowledged_at").eq("teacher_id", membership.user_id).in("session_id", sessions.map(session => session.id)) : Promise.resolve({ data: [] as AlertAcknowledgementRow[] }),
   ]);
   const labels = new Map((learners ?? []).map(row => [row.id, row.safe_label]));
   const titles = new Map((passages ?? []).map(row => [row.id, row.title]));
+  const acknowledgedAt = new Map((acknowledgements as AlertAcknowledgementRow[] ?? []).map(row => [row.session_id, row.acknowledged_at]));
   return TeacherSessionHistory.parse({ organisationId: input.organisationId, items: sessions.map(session => {
     const completionStatus = session.status === "CHILD_READING" ? "READING" : ["COMPLETED", "READY"].includes(session.status) ? "COMPLETED" : "READY_TO_START";
-    return { id: session.id, learnerLabel: labels.get(session.learner_id) ?? "Learner", passageTitle: titles.get(session.passage_id) ?? "Approved passage", sessionStatus: session.status, completionStatus, reviewStatus: completionStatus === "COMPLETED" ? "READY_FOR_REVIEW" : "NOT_READY", createdAt: new Date(session.created_at).toISOString(), completedAt: session.completed_at ? new Date(session.completed_at).toISOString() : null };
+    return { id: session.id, learnerLabel: labels.get(session.learner_id) ?? "Learner", passageTitle: titles.get(session.passage_id) ?? "Approved passage", sessionStatus: session.status, completionStatus, reviewStatus: completionStatus === "COMPLETED" ? "READY_FOR_REVIEW" : "NOT_READY", createdAt: new Date(session.created_at).toISOString(), completedAt: session.completed_at ? new Date(session.completed_at).toISOString() : null, acknowledgedAt: acknowledgedAt.get(session.id) ? new Date(acknowledgedAt.get(session.id)!).toISOString() : null };
   }) });
+}
+
+export async function acknowledgeTeacherSessionAlert(actor: ManusActor, input: AcknowledgeTeacherSessionAlertInput) {
+  const session = await sessionForStaff(actor, input.sessionId);
+  if (!session.status || !["COMPLETED", "READY"].includes(session.status)) throw new Error("Only completed synthetic sessions can be acknowledged");
+  const membership = await staffForOrganisation(actor, session.organisation_id);
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client.from("teacher_session_alert_acknowledgements").upsert({ session_id: session.id, teacher_id: membership.user_id, idempotency_key: input.idempotencyKey }, { onConflict: "session_id,teacher_id", ignoreDuplicates: true }).select("session_id, acknowledged_at").maybeSingle();
+  if (error) throw new Error(error.code === "23505" ? "This acknowledgement key was already used" : "Unable to acknowledge the completed session");
+  if (data) return TeacherSessionAlertAcknowledgement.parse({ sessionId: data.session_id, acknowledgedAt: new Date(data.acknowledged_at).toISOString() });
+  const { data: existing, error: existingError } = await client.from("teacher_session_alert_acknowledgements").select("session_id, acknowledged_at").eq("session_id", session.id).eq("teacher_id", membership.user_id).maybeSingle();
+  if (existingError || !existing) throw new Error("Unable to confirm completed-session acknowledgement");
+  return TeacherSessionAlertAcknowledgement.parse({ sessionId: existing.session_id, acknowledgedAt: new Date(existing.acknowledged_at).toISOString() });
 }
 
 export async function getHackathonSession(actor: ManusActor, sessionId: string) {
