@@ -84,6 +84,7 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       }
       if (name === "contentWorkflow.organisations") return { result: { data: { json: [{ id: learner.organisationId, name: "Demo Academy", role: "school_admin", canGovernContent: true }] } } };
       if (name === "contentWorkflow.overview") return { result: { data: { json: contentOverview } } };
+      if (name === "consentLifecycle.retentionEligibility") return { result: { data: { json: { learnerId: learner.id, purpose: "READING_ASSESSMENT", status: "ACTIVE", mayProcessData: true, retentionUntil: "2030-12-31T23:59:59.000Z" } } } };
       if (name.startsWith("contentWorkflow.")) return { result: { data: { json: contentOverview.reviewQueue[0] } } };
       if (name === "hackathonDemo.summary") return { result: { data: { json: hackathonDemoSummary } } };
       if (name === "hackathonDemo.teacherHistory") return { result: { data: { json: { organisationId: learner.organisationId, items: [{ id: hackathonDemoSummary.sessions[0].id, learnerLabel: "Ava", passageTitle: "The gentle harbour", sessionStatus: "CREATED", completionStatus: "READY_TO_START", reviewStatus: "NOT_READY", createdAt: "2026-09-02T10:00:00.000Z", completedAt: null }] } } } };
@@ -191,7 +192,6 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Synthetic session history", { exact: true })).toBeVisible();
     await expect(page.getByText("Awaiting finish", { exact: true })).toBeVisible();
     await expect(page.getByText(/does not capture or transmit a recording/i)).toBeVisible();
-    await page.getByRole("switch", { name: "Enable Demo Mode" }).click();
     await expect(page.getByRole("status")).toContainText("Demo Mode is on.");
     await expect(page.getByText("Synthetic file preset", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: /Session consent checked/i }).click();
@@ -214,6 +214,11 @@ test.describe("authenticated learner safety navigation", () => {
   test("teacher launch hands a synthetic child reading journey back to deterministic adult review", async ({ page }) => {
     await authenticate(page, teacher);
     await page.goto("/session-demo");
+    await expect(page.getByRole("heading", { name: "Teacher session checklist" })).toBeVisible();
+    await expect(page.getByText("Active synthetic consent is available", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Review ready" }).click();
+    await expect(page.getByText("No completed synthetic sessions are ready for adult review.", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "All sessions" }).click();
     await page.getByRole("button", { name: "Launch child reading canvas" }).click();
     await expect(page.getByRole("link", { name: /Open the synthetic child reader/i })).toHaveAttribute("href", `/read/${childToken}`);
     await page.goto(`/read/${childToken}`);
@@ -221,6 +226,10 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText(/does not record, upload, score, or analyse your voice/i)).toBeVisible();
     await expect(page.getByText(/teacher review/i)).toHaveCount(0);
     await page.getByRole("button", { name: "Start reading" }).click();
+    await expect(page.getByText("Reading progress", { exact: true })).toBeVisible();
+    await expect(page.getByText("Part 1 of 2", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Next part" }).click();
+    await expect(page.getByText("Part 2 of 2", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Spacious" }).click();
     await page.getByRole("button", { name: "Focus mode" }).click();
     await expect(page.getByRole("button", { name: "Exit focus mode" })).toBeVisible();

@@ -336,3 +336,12 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add child reading preferences for line spacing and a distraction-free focus mode, preserving accessibility and no-diagnostic safeguards.
 - [x] Add unit, router, and Playwright coverage; run TypeScript, full tests, and desktop/mobile visual verification.
 - [x] Document the discoverability and child-preference features and save a checkpoint.
+
+## Reading journey usability: launch checklist, review filter, and passage progress
+
+- [x] Inspect the teacher launch controls, session-history view, child reading canvas, and test patterns.
+- [x] Add a teacher pre-launch checklist that verifies learner selection, approved passage, active consent, synthetic scope, and safe launch readiness.
+- [x] Add a review-ready filter to teacher session history without exposing child tokens or adult-only data outside authorised views.
+- [x] Add a child-safe visual passage-progress indicator that tracks local reading position without scoring or diagnostic inference.
+- [x] Add unit and Playwright coverage; run TypeScript, full tests, and desktop/mobile visual verification: 78 Vitest tests and 11 Playwright tests pass.
+- [x] Document the workflow enhancements and save a checkpoint.

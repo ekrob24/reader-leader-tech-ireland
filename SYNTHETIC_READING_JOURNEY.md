@@ -31,6 +31,14 @@ The child reader is intentionally not a dashboard navigation item because it is 
 
 The child reader includes text-size controls, three line-spacing options, and a distraction-free **Focus mode**. These preferences are local visual controls only; they neither record learner data nor affect the adult decision record.
 
+## Teacher readiness and child progress
+
+Before creating a session, **Session demo** now presents a visible checklist for learner selection, adult-approved passage selection, the selected learner’s current consent eligibility, and the mock-only/no-audio boundary. The server independently repeats the consent and approval checks, so the checklist is informative rather than an authorisation substitute.
+
+The session history includes **All sessions** and **Review ready** filters. It displays only a safe learner label, passage title, creation time, completion state, and review state. Child links remain limited to the one-time launch flow.
+
+The child canvas presents a local “Part *n* of *n*” place marker, a visual progress bar, and earlier/next navigation when an approved passage has more than one sentence. It is explicitly described as navigation help, not a score, pace metric, or assessment result.
+
 ## Production boundary
 
 This slice is intentionally **not** a live reading assessment. It does not activate a microphone, store bytes, upload audio, call a speech provider, calculate reading metrics, or infer a diagnosis. Those features remain blocked until private storage, physical deletion, provider agreements, durable task infrastructure, and safeguarding approval are complete.
