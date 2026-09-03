@@ -373,3 +373,11 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Replace the session-demo query with the safe teacher readiness procedure and add role-boundary regression coverage.
 - [x] Run TypeScript, Vitest, Playwright, and live session-demo verification: 81 Vitest tests and 11 Playwright tests pass; the live session demo reaches a ready-to-create teacher checklist.
 - [x] Document and save a checkpoint.
+
+## Comprehensive Reader Leader build document
+
+- [x] Review the original specification, current status, feature documentation, migrations, and relevant task history.
+- [x] Document the product purpose, role model, technical architecture, data boundaries, and implemented features.
+- [x] Document all current user flows, including guardian consent, content approval, teacher session launch, child reading, adult review, and operations.
+- [x] Document the mock-only boundary, verification evidence, deployment/migration guidance, and remaining production/MVP roadmap.
+- [x] Review the document for consistency, add it to the tracker, and deliver the completed file.
