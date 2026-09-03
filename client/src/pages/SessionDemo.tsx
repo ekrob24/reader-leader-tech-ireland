@@ -42,7 +42,7 @@ export default function SessionDemo() {
   const content = trpc.contentWorkflow.overview.useQuery(contentInput, { enabled: Boolean(organisationId) });
   const summary = trpc.hackathonDemo.summary.useQuery(contentInput, { enabled: Boolean(organisationId) });
   const retentionInput = useMemo(() => ({ learnerId: learnerId ?? emptyId }), [learnerId]);
-  const retention = trpc.consentLifecycle.retentionEligibility.useQuery(retentionInput, { enabled: Boolean(learnerId) });
+  const retention = trpc.hackathonDemo.launchReadiness.useQuery(retentionInput, { enabled: Boolean(learnerId) });
   const historyInput = useMemo(() => ({ organisationId: organisationId ?? emptyId, limit: 12 }), [organisationId]);
   const history = trpc.hackathonDemo.teacherHistory.useQuery(historyInput, { enabled: Boolean(organisationId) });
   const utils = trpc.useUtils();

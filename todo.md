@@ -365,3 +365,11 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add a teacher-authorised PDF summary export containing only safe synthetic review content and no identifiers or raw audio metadata.
 - [x] Add unit and Playwright coverage; run TypeScript, full tests, and visual verification: 79 Vitest tests and 11 Playwright tests pass.
 - [x] Document the feature boundaries and save a checkpoint.
+
+## Bug fix: teacher session launch consent-readiness access
+
+- [x] Inspect the guardian consent eligibility route and session-demo teacher readiness query.
+- [x] Add a teacher-authorised, learner-scoped launch-readiness consent procedure that does not grant guardian consent-management powers.
+- [x] Replace the session-demo query with the safe teacher readiness procedure and add role-boundary regression coverage.
+- [x] Run TypeScript, Vitest, Playwright, and live session-demo verification: 81 Vitest tests and 11 Playwright tests pass; the live session demo reaches a ready-to-create teacher checklist.
+- [x] Document and save a checkpoint.

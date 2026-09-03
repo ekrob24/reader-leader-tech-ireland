@@ -54,6 +54,9 @@ export const RequestDataDeletionInput = z.object({
 });
 export type RequestDataDeletionInput = z.infer<typeof RequestDataDeletionInput>;
 
+export const TeacherLaunchReadinessInput = z.object({ learnerId: LearnerId });
+export type TeacherLaunchReadinessInput = z.infer<typeof TeacherLaunchReadinessInput>;
+
 export const ProcessDeletionRequestInput = z.object({
   requestId: DataDeletionRequestId,
   operationId: z.string().trim().min(8).max(120),

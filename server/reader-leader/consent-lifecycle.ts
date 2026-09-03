@@ -6,6 +6,7 @@ import {
   RecordGuardianConsentInput,
   RequestDataDeletionInput,
   RetentionEligibility,
+  TeacherLaunchReadinessInput,
   WithdrawGuardianConsentInput,
 } from "@shared/consent-lifecycle";
 import { getSupabaseAdminClient } from "../supabase";
@@ -20,6 +21,9 @@ type ConsentRow = {
 type DeletionRequestRow = {
   id: string; learner_id: string; guardian_id: string; scope: string; status: string; requested_at: string; completed_at: string | null;
 };
+type TeacherMembership = { user_id: string; organisation_id: string; role: string };
+const teacherLaunchRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
+export function hasTeacherLaunchRole(role: string) { return teacherLaunchRoles.has(role); }
 
 export type DeletionExecutor = {
   deleteAudioAsset: (asset: { id: string; storageKey: string | null; storageObjectHash: string }) => Promise<"DELETED" | "NOT_FOUND" | "BLOCKED">;
@@ -185,6 +189,29 @@ export async function getRetentionEligibility(actor: ManusActor, learnerId: stri
     .maybeSingle();
   if (error) throw new Error("Unable to read consent retention state");
   return deriveRetentionEligibility(learnerId, data as Pick<ConsentRow, "learner_id" | "purpose" | "status" | "retention_until"> | null);
+}
+
+/**
+ * Provides the minimum consent state needed to launch a reading session.
+ * It does not expose guardian consent-management operations to staff.
+ */
+export async function getTeacherLaunchReadiness(actor: ManusActor, input: TeacherLaunchReadinessInput): Promise<RetentionEligibility> {
+  const userId = await resolveSupabaseUserId(actor);
+  const client = getSupabaseAdminClient();
+  const { data: learner, error: learnerError } = await client.from("learners").select("id, organisation_id").eq("id", input.learnerId).maybeSingle();
+  if (learnerError || !learner) throw new Error("Learner was not found");
+  const { data: membership, error: membershipError } = await client.from("memberships").select("user_id, organisation_id, role").eq("user_id", userId).eq("organisation_id", learner.organisation_id).maybeSingle();
+  const staff = membership as TeacherMembership | null;
+  if (membershipError || !staff || !hasTeacherLaunchRole(staff.role)) throw new Error("Teacher access to this learner could not be verified");
+  const { data: consent, error: consentError } = await client.from("consents")
+    .select("learner_id, purpose, status, retention_until")
+    .eq("learner_id", input.learnerId)
+    .eq("purpose", "READING_ASSESSMENT")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (consentError) throw new Error("Unable to read launch readiness");
+  return deriveRetentionEligibility(input.learnerId, consent as Pick<ConsentRow, "learner_id" | "purpose" | "status" | "retention_until"> | null);
 }
 
 export async function processDeletionVerification(requestId: string, executor: DeletionExecutor): Promise<DataDeletionRequestRecord> {

@@ -15,8 +15,8 @@ import { LearnerSelectionInput, TimelinePageInput, OverrideReversalInput, TIMELI
 import { getLearnerWorkspace, getLearnerTimelinePage, listLearnersForActor, reverseOverride } from "./reader-leader/learner-safety-persistence";
 import { ReaderLeaderContractBoundaryError } from "./reader-leader/contract-boundary";
 import { TRPCError } from "@trpc/server";
-import { RecordGuardianConsentInput, RequestDataDeletionInput, WithdrawGuardianConsentInput, DataDeletionRequestId } from "@shared/consent-lifecycle";
-import { getDeletionStatus, getRetentionEligibility, recordGuardianConsent, requestDataDeletion, withdrawGuardianConsent } from "./reader-leader/consent-lifecycle";
+import { RecordGuardianConsentInput, RequestDataDeletionInput, WithdrawGuardianConsentInput, DataDeletionRequestId, TeacherLaunchReadinessInput } from "@shared/consent-lifecycle";
+import { getDeletionStatus, getRetentionEligibility, getTeacherLaunchReadiness, recordGuardianConsent, requestDataDeletion, withdrawGuardianConsent } from "./reader-leader/consent-lifecycle";
 import { ApprovePassageInput, ContentOrganisationInput, CreatePassageDraftInput, RetirePassageInput, SetPassageRightsInput, SetPassageSafetyInput } from "@shared/content-workflow";
 import { approvePassage, createPassageDraft, getContentWorkflowOverview, listContentOrganisations, retirePassage, setPassageRights, setPassageSafety } from "./reader-leader/content-workflow";
 import { AcknowledgeTeacherSessionAlertInput, CreateHackathonSessionInput, HackathonSessionIdInput, RecordMockUploadInput, ResetHackathonDemoInput, RetryMockAnalysisInput, RunMockAnalysisInput, TeacherSessionHistoryInput } from "@shared/hackathon-session-demo";
@@ -80,6 +80,7 @@ export const appRouter = router({
     retryMockAnalysis: protectedProcedure.input(RetryMockAnalysisInput).mutation(({ ctx, input }) => retryMockAnalysis(ctx.user, input)),
     session: protectedProcedure.input(HackathonSessionIdInput).query(({ ctx, input }) => getHackathonSession(ctx.user, input.sessionId)),
     teacherHistory: protectedProcedure.input(TeacherSessionHistoryInput).query(({ ctx, input }) => getTeacherSessionHistory(ctx.user, input)),
+    launchReadiness: protectedProcedure.input(TeacherLaunchReadinessInput).query(({ ctx, input }) => getTeacherLaunchReadiness(ctx.user, input)),
     acknowledgeReview: protectedProcedure.input(AcknowledgeTeacherSessionAlertInput).mutation(({ ctx, input }) => acknowledgeTeacherSessionAlert(ctx.user, input)),
     resetSyntheticSessions: protectedProcedure.input(ResetHackathonDemoInput).mutation(({ ctx, input }) => resetHackathonDemoSessions(ctx.user, input)),
   }),
