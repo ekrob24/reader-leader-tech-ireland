@@ -86,6 +86,7 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       if (name === "contentWorkflow.overview") return { result: { data: { json: contentOverview } } };
       if (name.startsWith("contentWorkflow.")) return { result: { data: { json: contentOverview.reviewQueue[0] } } };
       if (name === "hackathonDemo.summary") return { result: { data: { json: hackathonDemoSummary } } };
+      if (name === "hackathonDemo.teacherHistory") return { result: { data: { json: { organisationId: learner.organisationId, items: [{ id: hackathonDemoSummary.sessions[0].id, learnerLabel: "Ava", passageTitle: "The gentle harbour", sessionStatus: "CREATED", completionStatus: "READY_TO_START", reviewStatus: "NOT_READY", createdAt: "2026-09-02T10:00:00.000Z", completedAt: null }] } } } };
       if (name === "hackathonDemo.resetSyntheticSessions") return { result: { data: { json: { deletedSessions: 1 } } } };
       if (name.startsWith("hackathonDemo.")) return { result: { data: { json: hackathonDemoSummary.sessions[0] } } };
       if (name === "childJourney.launch") return { result: { data: { json: { childPath: `/read/${childToken}`, expiresAt: "2026-09-03T12:30:00.000Z", mockOnly: true } } } };
@@ -187,6 +188,8 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Interactive safe trace", { exact: true })).toBeVisible();
     await expect(page.getByText("Active guardian consent was verified before mock processing.", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Run deterministic mock analysis" })).toBeVisible();
+    await expect(page.getByText("Synthetic session history", { exact: true })).toBeVisible();
+    await expect(page.getByText("Awaiting finish", { exact: true })).toBeVisible();
     await expect(page.getByText(/does not capture or transmit a recording/i)).toBeVisible();
     await page.getByRole("switch", { name: "Enable Demo Mode" }).click();
     await expect(page.getByRole("status")).toContainText("Demo Mode is on.");
@@ -218,6 +221,10 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText(/does not record, upload, score, or analyse your voice/i)).toBeVisible();
     await expect(page.getByText(/teacher review/i)).toHaveCount(0);
     await page.getByRole("button", { name: "Start reading" }).click();
+    await page.getByRole("button", { name: "Spacious" }).click();
+    await page.getByRole("button", { name: "Focus mode" }).click();
+    await expect(page.getByRole("button", { name: "Exit focus mode" })).toBeVisible();
+    await page.getByRole("button", { name: "Exit focus mode" }).click();
     await page.getByRole("button", { name: "I would like some help" }).click();
     await expect(page.getByText(/Your teacher knows you would like help/i)).toBeVisible();
     await page.getByRole("button", { name: "I am finished" }).click();

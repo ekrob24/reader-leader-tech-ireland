@@ -25,6 +25,12 @@ This is the first end-to-end Reader Leader journey that demonstrates the **actua
 
 Turn on **Demo Mode**, create a session, launch the child reader in a new tab, select **Start reading**, optionally request help, then select **I am finished**. Return to the teacher tab and open the completed review record. Explain that its three event cards are deterministic fixtures used to demonstrate the safe adult workflow—not a statement about a real child’s reading.
 
+## Finding the child session
+
+The child reader is intentionally not a dashboard navigation item because it is opened only from an authorised, time-limited teacher launch. To demonstrate it, open **Session demo**, turn on **Demo Mode**, select the synthetic learner and approved passage, create the session, and choose **Launch child reading canvas**. The generated child link is displayed once for launch and never added to teacher history. The new **Synthetic session history** panel makes prior sessions easy to find through safe learner labels, passage titles, completion state, and review state.
+
+The child reader includes text-size controls, three line-spacing options, and a distraction-free **Focus mode**. These preferences are local visual controls only; they neither record learner data nor affect the adult decision record.
+
 ## Production boundary
 
 This slice is intentionally **not** a live reading assessment. It does not activate a microphone, store bytes, upload audio, call a speech provider, calculate reading metrics, or infer a diagnosis. Those features remain blocked until private storage, physical deletion, provider agreements, durable task infrastructure, and safeguarding approval are complete.

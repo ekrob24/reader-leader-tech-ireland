@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPrivacySafeTraceSummary, CreateHackathonSessionInput, HackathonSessionRecord, RecordMockUploadInput, ResetHackathonDemoInput } from "@shared/hackathon-session-demo";
+import { createPrivacySafeTraceSummary, CreateHackathonSessionInput, HackathonSessionRecord, RecordMockUploadInput, ResetHackathonDemoInput, TeacherSessionHistory } from "@shared/hackathon-session-demo";
 import { hasActiveAssessmentConsent } from "./reader-leader/hackathon-session-demo";
 
 const learnerId = "11111111-1111-4111-8111-111111111111";
@@ -44,5 +44,12 @@ describe("hackathon session demo contracts", () => {
   it("requires an explicit synthetic-only confirmation before a reset operation", () => {
     expect(ResetHackathonDemoInput.parse({ organisationId: "44444444-4444-4444-8444-444444444444", confirmation: "RESET_SYNTHETIC_SESSIONS" })).toBeTruthy();
     expect(() => ResetHackathonDemoInput.parse({ organisationId: "44444444-4444-4444-8444-444444444444", confirmation: "RESET" })).toThrow();
+  });
+
+  it("keeps teacher session history to safe labels, passage titles, and workflow status rather than child links", () => {
+    const history = TeacherSessionHistory.parse({ organisationId: "44444444-4444-4444-8444-444444444444", items: [{ id: sessionId, learnerLabel: "Ava", passageTitle: "A safe passage", sessionStatus: "CREATED", completionStatus: "READY_TO_START", reviewStatus: "NOT_READY", createdAt: "2026-09-03T12:00:00.000Z", completedAt: null }] });
+    expect(history.items[0]).not.toHaveProperty("childPath");
+    expect(history.items[0]).not.toHaveProperty("token");
+    expect(history.items[0]?.reviewStatus).toBe("NOT_READY");
   });
 });

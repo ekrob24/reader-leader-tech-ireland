@@ -69,6 +69,25 @@ export const HackathonDemoSummary = z.object({
 });
 export type HackathonDemoSummary = z.infer<typeof HackathonDemoSummary>;
 
+export const TeacherSessionHistoryInput = z.object({
+  organisationId: DemoId,
+  limit: z.number().int().min(1).max(25).default(12),
+});
+export type TeacherSessionHistoryInput = z.infer<typeof TeacherSessionHistoryInput>;
+export const TeacherSessionHistoryItem = z.object({
+  id: DemoId,
+  learnerLabel: z.string().trim().min(1).max(80),
+  passageTitle: z.string().trim().min(1).max(160),
+  sessionStatus: HackathonSessionRecord.shape.sessionStatus,
+  completionStatus: z.enum(["READY_TO_START", "READING", "COMPLETED"]),
+  reviewStatus: z.enum(["NOT_READY", "READY_FOR_REVIEW"]),
+  createdAt: z.string().datetime(),
+  completedAt: z.string().datetime().nullable(),
+});
+export type TeacherSessionHistoryItem = z.infer<typeof TeacherSessionHistoryItem>;
+export const TeacherSessionHistory = z.object({ organisationId: DemoId, items: z.array(TeacherSessionHistoryItem) });
+export type TeacherSessionHistory = z.infer<typeof TeacherSessionHistory>;
+
 export const PrivacySafeTraceSummary = z.object({
   reportTitle: z.literal("Reader Leader — Mock analysis safety trace"),
   classification: z.literal("SYNTHETIC_HACKATHON_DEMO_ONLY"),

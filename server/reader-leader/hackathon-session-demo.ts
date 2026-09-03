@@ -8,6 +8,8 @@ import {
   ResetHackathonDemoResult,
   RetryMockAnalysisInput,
   RunMockAnalysisInput,
+  TeacherSessionHistory,
+  TeacherSessionHistoryInput,
 } from "@shared/hackathon-session-demo";
 import { getSupabaseAdminClient } from "../supabase";
 import { ManusActor, resolveSupabaseUserId } from "./override-persistence";
@@ -15,8 +17,9 @@ import { ManusActor, resolveSupabaseUserId } from "./override-persistence";
 const sessionRoles = new Set(["school_admin", "literacy_lead", "teacher_set"]);
 const resetRoles = new Set(["school_admin", "literacy_lead"]);
 type Membership = { user_id: string; organisation_id: string; role: string };
-type SessionRow = { id: string; learner_id: string; passage_id: string; organisation_id: string; status: "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED" };
+type SessionRow = { id: string; learner_id: string; passage_id: string; organisation_id: string; status: "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED" | "CHILD_READING" | "COMPLETED" };
 type JobRow = { id: string; session_id: string; status: "QUEUED" | "RUNNING" | "READY" | "FAILED" | "RETRYING" | "BLOCKED"; attempt_count: number; trace_id: string };
+type HistorySessionRow = SessionRow & { created_at: string; completed_at: string | null };
 
 export function hasActiveAssessmentConsent(consent: { status: string; retention_until: string } | null | undefined, now = Date.now()) {
   return Boolean(consent && consent.status === "ACTIVE" && new Date(consent.retention_until).getTime() > now);
@@ -127,7 +130,7 @@ export async function retryMockAnalysis(actor: ManusActor, input: RetryMockAnaly
 
 export async function getHackathonDemoSummary(actor: ManusActor, organisationId: string) {
   await staffForOrganisation(actor, organisationId);
-  const { data, error } = await getSupabaseAdminClient().from("reading_sessions").select("id, learner_id, passage_id, organisation_id, status").eq("organisation_id", organisationId).order("created_at", { ascending: false }).limit(12);
+  const { data, error } = await getSupabaseAdminClient().from("reading_sessions").select("id, learner_id, passage_id, organisation_id, status").eq("organisation_id", organisationId).eq("demo_mode", true).order("created_at", { ascending: false }).limit(12);
   if (error) throw new Error("Unable to load hackathon session records");
   const sessions = await Promise.all((data as SessionRow[] ?? []).map(buildSessionRecord));
   return HackathonDemoSummary.parse({
@@ -137,6 +140,26 @@ export async function getHackathonDemoSummary(actor: ManusActor, organisationId:
     blockedSessionCount: sessions.filter(session => !session.mayProcessData || session.sessionStatus === "BLOCKED").length,
     queuedOrRunningJobCount: sessions.filter(session => session.job && ["QUEUED", "RUNNING", "RETRYING"].includes(session.job.status)).length,
   });
+}
+
+export async function getTeacherSessionHistory(actor: ManusActor, input: TeacherSessionHistoryInput) {
+  await staffForOrganisation(actor, input.organisationId);
+  const client = getSupabaseAdminClient();
+  const { data, error } = await client.from("reading_sessions").select("id, learner_id, passage_id, organisation_id, status, created_at, completed_at").eq("organisation_id", input.organisationId).eq("demo_mode", true).order("created_at", { ascending: false }).limit(input.limit);
+  if (error) throw new Error("Unable to load teacher session history");
+  const sessions = (data ?? []) as HistorySessionRow[];
+  const learnerIds = Array.from(new Set(sessions.map(session => session.learner_id)));
+  const passageIds = Array.from(new Set(sessions.map(session => session.passage_id)));
+  const [{ data: learners }, { data: passages }] = await Promise.all([
+    learnerIds.length ? client.from("learners").select("id, safe_label").in("id", learnerIds) : Promise.resolve({ data: [] as Array<{ id: string; safe_label: string }> }),
+    passageIds.length ? client.from("passages").select("id, title").in("id", passageIds) : Promise.resolve({ data: [] as Array<{ id: string; title: string }> }),
+  ]);
+  const labels = new Map((learners ?? []).map(row => [row.id, row.safe_label]));
+  const titles = new Map((passages ?? []).map(row => [row.id, row.title]));
+  return TeacherSessionHistory.parse({ organisationId: input.organisationId, items: sessions.map(session => {
+    const completionStatus = session.status === "CHILD_READING" ? "READING" : ["COMPLETED", "READY"].includes(session.status) ? "COMPLETED" : "READY_TO_START";
+    return { id: session.id, learnerLabel: labels.get(session.learner_id) ?? "Learner", passageTitle: titles.get(session.passage_id) ?? "Approved passage", sessionStatus: session.status, completionStatus, reviewStatus: completionStatus === "COMPLETED" ? "READY_FOR_REVIEW" : "NOT_READY", createdAt: new Date(session.created_at).toISOString(), completedAt: session.completed_at ? new Date(session.completed_at).toISOString() : null };
+  }) });
 }
 
 export async function getHackathonSession(actor: ManusActor, sessionId: string) {

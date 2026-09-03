@@ -327,3 +327,12 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Build teacher launch, child-session link/handoff, and adult review UI with deterministic mock word events and append-only review actions.
 - [x] Add unit, RLS, tRPC, and Playwright coverage for child safety, session authorisation, completion, and teacher review.
 - [x] Run TypeScript, full tests, migration verification, desktop/mobile browser checks, and save a checkpoint: 75 Vitest tests and 11 Playwright tests pass.
+
+## Reading journey discoverability, session history, and child preferences
+
+- [x] Inspect current session dashboard, launch controls, teacher review routes, child canvas, and browser coverage.
+- [x] Add a protected teacher session-history list with learner-safe labels, passage titles, completion/review statuses, and paginated retrieval.
+- [x] Make child-session launch and active child links clearly discoverable in the teacher workspace without exposing child tokens in history.
+- [x] Add child reading preferences for line spacing and a distraction-free focus mode, preserving accessibility and no-diagnostic safeguards.
+- [x] Add unit, router, and Playwright coverage; run TypeScript, full tests, and desktop/mobile visual verification.
+- [x] Document the discoverability and child-preference features and save a checkpoint.
