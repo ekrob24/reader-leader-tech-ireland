@@ -381,3 +381,19 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Document all current user flows, including guardian consent, content approval, teacher session launch, child reading, adult review, and operations.
 - [x] Document the mock-only boundary, verification evidence, deployment/migration guidance, and remaining production/MVP roadmap.
 - [x] Review the document for consistency, add it to the tracker, and deliver the completed file.
+
+## Child-reading experience expansion and production assessment roadmap
+
+- [x] Reconcile the planned production audio/assessment path with the current synthetic child-reading experience.
+- [x] Define a child reading-canvas scope covering approved passages, vocabulary support, optional practice activities, encouragement, accessibility, and adult controls.
+- [x] Define non-competitive motivation rules that avoid scores, public rankings, diagnostic labels, and performance-based rewards.
+- [x] Define phased implementation, data boundaries, safety gates, and testable acceptance criteria for the expanded child experience.
+- [x] Document the proposal and obtain confirmation before building the child experience.
+
+## Child-centred ages 8–10 implementation and technology guide
+
+- [x] Review the supplied research, methodology, development plan, agentic workflow, and current Reader Leader documentation.
+- [x] Define the recommended learning experience, vocabulary support, motivation design, age-appropriate safeguards, and adult controls.
+- [x] Specify the technical implementation architecture, data flows, services, tools, dependencies, and testing strategy.
+- [x] Define a phased feature roadmap with acceptance criteria for the child experience, audio/assessment path, and pilot readiness.
+- [x] Update the comprehensive build guide, review it for consistency, record completion, and deliver it.

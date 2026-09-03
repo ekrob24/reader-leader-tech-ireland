@@ -326,6 +326,12 @@ If the immediate goal is a stronger hackathon presentation without real voice pr
 4. A guardian consent-status mock screen that is visibly synthetic and does not accept real personal data.
 5. A one-page architecture/safeguarding explainer based on the existing trace, RLS, consent, and content-approval model.
 
+### 11.3 Recommended child-centred build path
+
+The recommended next product investment is a **teacher-assigned child reading shelf with adult-approved vocabulary cards**, not more generic gamification or an early live-audio feature. It gives children aged 8–10 a clearer reason to return to the product while retaining Reader Leader’s defining adult evidence workflow. The child journey should reward participation, completing a reading path, exploring a word, and asking for help; it must not score speech, rank children, reward perceived accuracy, or present a reading level as a judgement.
+
+The detailed implementation specification—including child screens, vocabulary-card model, non-competitive motivation rules, adult controls, additive database model, Zod/tRPC contracts, implementation tools, live-audio prerequisites, acceptance tests, and staged roadmap—is in [Child-Centred Implementation and Technology Plan](CHILD_CENTRED_IMPLEMENTATION_AND_TECHNOLOGY_PLAN.md).[7]
+
 ---
 
 ## 12. Suggested delivery roadmap
@@ -385,4 +391,5 @@ The highest-value next decision is not another dashboard feature. It is whether 
 [3]: [Synthetic reading journey implementation guide](SYNTHETIC_READING_JOURNEY.md)  
 [4]: [Consent, withdrawal, retention, and deletion implementation](PRIORITY_1_IMPLEMENTATION.md)  
 [5]: [Private storage and content workflow guide](PRIVATE_STORAGE_AND_CONTENT_WORKFLOW.md)  
-[6]: [Hackathon operations runbook](OPERATIONS_RUNBOOK.md)
+[6]: [Hackathon operations runbook](OPERATIONS_RUNBOOK.md)  
+[7]: [Child-Centred Implementation and Technology Plan](CHILD_CENTRED_IMPLEMENTATION_AND_TECHNOLOGY_PLAN.md)  
