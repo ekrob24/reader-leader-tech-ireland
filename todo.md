@@ -317,3 +317,13 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Define the intended end-to-end guardian, teacher, child-reader, content, safety, and review experience in plain language.
 - [x] Create a staged child-reading delivery plan with functional acceptance criteria, safety gates, and explicit mock-versus-production boundaries.
 - [x] Recommend the smallest next build slice that creates a genuinely usable reading journey rather than another presentation control.
+
+## Synthetic reading journey: child canvas, teacher hand-off, and adult mock review
+
+- [x] Inspect session persistence, approved-passage/content workflow, learner safety routes, and mock analysis contracts.
+- [x] Define contracts for teacher-launched child sessions, child-safe completion/help actions, and deterministic mock word-event review records.
+- [x] Add schema, typed model, RLS, and protected procedures for child session launch/completion and adult review retrieval.
+- [x] Build an isolated child-safe reading canvas with adjustable reading settings, help, and neutral completion states; no microphone or diagnostic content.
+- [x] Build teacher launch, child-session link/handoff, and adult review UI with deterministic mock word events and append-only review actions.
+- [x] Add unit, RLS, tRPC, and Playwright coverage for child safety, session authorisation, completion, and teacher review.
+- [x] Run TypeScript, full tests, migration verification, desktop/mobile browser checks, and save a checkpoint: 75 Vitest tests and 11 Playwright tests pass.

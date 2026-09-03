@@ -21,6 +21,8 @@ import { ApprovePassageInput, ContentOrganisationInput, CreatePassageDraftInput,
 import { approvePassage, createPassageDraft, getContentWorkflowOverview, listContentOrganisations, retirePassage, setPassageRights, setPassageSafety } from "./reader-leader/content-workflow";
 import { CreateHackathonSessionInput, HackathonSessionIdInput, RecordMockUploadInput, ResetHackathonDemoInput, RetryMockAnalysisInput, RunMockAnalysisInput } from "@shared/hackathon-session-demo";
 import { createHackathonSession, getHackathonDemoSummary, getHackathonSession, recordMockUpload, resetHackathonDemoSessions, retryMockAnalysis, runMockAnalysis } from "./reader-leader/hackathon-session-demo";
+import { ChildSessionActionInput, ChildSessionTokenInput, LaunchChildSessionInput, TeacherSessionReviewInput } from "@shared/child-reading-journey";
+import { completeChildReading, getChildReadingView, getTeacherMockReview, launchChildSession, requestChildHelp, startChildReading } from "./reader-leader/child-reading-journey";
 
 async function readLearnerSafetyData<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -78,6 +80,14 @@ export const appRouter = router({
     retryMockAnalysis: protectedProcedure.input(RetryMockAnalysisInput).mutation(({ ctx, input }) => retryMockAnalysis(ctx.user, input)),
     session: protectedProcedure.input(HackathonSessionIdInput).query(({ ctx, input }) => getHackathonSession(ctx.user, input.sessionId)),
     resetSyntheticSessions: protectedProcedure.input(ResetHackathonDemoInput).mutation(({ ctx, input }) => resetHackathonDemoSessions(ctx.user, input)),
+  }),
+  childJourney: router({
+    launch: protectedProcedure.input(LaunchChildSessionInput).mutation(({ ctx, input }) => launchChildSession(ctx.user, input)),
+    teacherReview: protectedProcedure.input(TeacherSessionReviewInput).query(({ ctx, input }) => getTeacherMockReview(ctx.user, input)),
+    view: publicProcedure.input(ChildSessionTokenInput).query(({ input }) => getChildReadingView(input)),
+    start: publicProcedure.input(ChildSessionActionInput).mutation(({ input }) => startChildReading(input)),
+    requestHelp: publicProcedure.input(ChildSessionActionInput).mutation(({ input }) => requestChildHelp(input)),
+    complete: publicProcedure.input(ChildSessionActionInput).mutation(({ input }) => completeChildReading(input)),
   }),
   readerLeader: router({
     preview: publicProcedure.query(async () => {

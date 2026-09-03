@@ -51,7 +51,7 @@ export const HackathonSessionRecord = z.object({
   learnerId: DemoId,
   passageId: DemoId,
   organisationId: DemoId,
-  sessionStatus: z.enum(["CREATED", "UPLOADING", "ANALYSING", "READY", "BLOCKED", "FAILED"]),
+  sessionStatus: z.enum(["CREATED", "UPLOADING", "ANALYSING", "READY", "BLOCKED", "FAILED", "CHILD_READING", "COMPLETED"]),
   uploadStatus: MockUploadStatus,
   consentStatus: z.enum(["ACTIVE", "WITHDRAWN", "EXPIRED", "PENDING_DELETION", "DELETED"]),
   mayProcessData: z.boolean(),

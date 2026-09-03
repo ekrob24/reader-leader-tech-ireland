@@ -8,7 +8,7 @@
  */
 
 export type ReaderLeaderRole = "school_admin" | "literacy_lead" | "teacher_set" | "content_steward" | "guardian" | "learner";
-export type SessionStatus = "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED";
+export type SessionStatus = "CREATED" | "UPLOADING" | "ANALYSING" | "READY" | "BLOCKED" | "FAILED" | "CHILD_READING" | "COMPLETED";
 export type DecisionAction = "PROMPT" | "MODEL" | "STAY_SILENT" | "ESCALATE";
 export type ConsentStatus = "ACTIVE" | "WITHDRAWN" | "EXPIRED" | "PENDING_DELETION" | "DELETED";
 export type WithdrawalReason = "WITHDRAWAL_OF_CONSENT" | "RETENTION_OBJECTION" | "ACCOUNT_CLOSURE" | "OTHER";
@@ -120,6 +120,18 @@ export interface Database {
       mock_analysis_trace_events: {
         Row: { id: string; trace_id: string; session_id: string; stage: MockTraceStage; safe_summary: string; created_at: string };
         Insert: { id?: string; trace_id: string; session_id: string; stage: MockTraceStage; safe_summary: string; created_at?: string };
+        Update: never;
+        Relationships: NoRelationships;
+      };
+      child_session_tokens: {
+        Row: { id: string; session_id: string; token_hash: string; expires_at: string; started_at: string | null; completed_at: string | null; help_requested_at: string | null; created_by: string; created_at: string };
+        Insert: { id?: string; session_id: string; token_hash: string; expires_at: string; started_at?: string | null; completed_at?: string | null; help_requested_at?: string | null; created_by: string; created_at?: string };
+        Update: { id?: string; session_id?: string; token_hash?: string; expires_at?: string; started_at?: string | null; completed_at?: string | null; help_requested_at?: string | null; created_by?: string; created_at?: string };
+        Relationships: NoRelationships;
+      };
+      mock_word_events: {
+        Row: { id: string; session_id: string; token_index: number; reference_word: string; event_type: "SUBSTITUTION" | "SELF_CORRECTION" | "HESITATION"; suggested_action: DecisionAction; teacher_note: string; created_at: string };
+        Insert: { id?: string; session_id: string; token_index: number; reference_word: string; event_type: "SUBSTITUTION" | "SELF_CORRECTION" | "HESITATION"; suggested_action: DecisionAction; teacher_note: string; created_at?: string };
         Update: never;
         Relationships: NoRelationships;
       };

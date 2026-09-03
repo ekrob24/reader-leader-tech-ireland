@@ -38,14 +38,25 @@ const hackathonDemoSummary = {
   queuedOrRunningJobCount: 1,
   sessions: [{
     id: "00000000-0000-4000-8000-000000000031", learnerId: learner.id, passageId: contentOverview.approvedPassages[0].id, organisationId: learner.organisationId,
-    sessionStatus: "ANALYSING", uploadStatus: "UPLOADED", consentStatus: "ACTIVE", mayProcessData: true,
-    job: { id: "00000000-0000-4000-8000-000000000032", status: "QUEUED", attemptCount: 0, traceId: "00000000-0000-4000-8000-000000000033" },
+    sessionStatus: "CREATED", uploadStatus: "NOT_STARTED", consentStatus: "ACTIVE", mayProcessData: true,
+    job: null,
     traces: [{ id: "00000000-0000-4000-8000-000000000034", traceId: "00000000-0000-4000-8000-000000000033", sessionId: "00000000-0000-4000-8000-000000000031", stage: "SESSION_CONSENT_CHECKED", safeSummary: "Active guardian consent was verified before mock processing.", createdAt: "2026-09-02T10:00:00.000Z" }],
   }],
 };
+const childToken = "a".repeat(43);
+const childReading = (state: "READY_TO_START" | "READING" | "COMPLETED", helpRequested = false) => ({
+  state, passage: { title: "The gentle harbour", body: "The harbour is quiet. Boats wait by the shore." }, helpRequested, mockOnly: true,
+  childMessage: state === "COMPLETED" ? "Thank you for reading. Your teacher will look at the next step with you." : state === "READING" ? "Read at your own pace. You can ask for help whenever you need it." : "When you are ready, start reading at your own pace.",
+});
+const teacherMockReview = { sessionId: hackathonDemoSummary.sessions[0].id, sessionStatus: "COMPLETED", passageTitle: "The gentle harbour", mockOnly: true, awaitingChild: false, wordEvents: [
+  { id: "00000000-0000-4000-8000-000000000041", tokenIndex: 2, referenceWord: "through", eventType: "SUBSTITUTION", suggestedAction: "PROMPT", teacherNote: "Synthetic substitution for the teacher to review; invite a calm retry before modelling." },
+  { id: "00000000-0000-4000-8000-000000000042", tokenIndex: 7, referenceWord: "harbour", eventType: "SELF_CORRECTION", suggestedAction: "STAY_SILENT", teacherNote: "Synthetic self-correction; no interruption is recommended." },
+] };
 
 async function authenticate(page: Page, user: User, scenario: Scenario = "success") {
   let timelineCalls = 0;
+  let childState: "READY_TO_START" | "READING" | "COMPLETED" = "READY_TO_START";
+  let helpRequested = false;
   await page.route("**/api/trpc/**", async route => {
     const requestUrl = new URL(route.request().url());
     const procedures = (requestUrl.pathname.split("/").pop() ?? "").split(",");
@@ -77,6 +88,12 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       if (name === "hackathonDemo.summary") return { result: { data: { json: hackathonDemoSummary } } };
       if (name === "hackathonDemo.resetSyntheticSessions") return { result: { data: { json: { deletedSessions: 1 } } } };
       if (name.startsWith("hackathonDemo.")) return { result: { data: { json: hackathonDemoSummary.sessions[0] } } };
+      if (name === "childJourney.launch") return { result: { data: { json: { childPath: `/read/${childToken}`, expiresAt: "2026-09-03T12:30:00.000Z", mockOnly: true } } } };
+      if (name === "childJourney.view") return { result: { data: { json: childReading(childState, helpRequested) } } };
+      if (name === "childJourney.start") { childState = "READING"; return { result: { data: { json: childReading(childState, helpRequested) } } }; }
+      if (name === "childJourney.requestHelp") { helpRequested = true; return { result: { data: { json: childReading(childState, helpRequested) } } }; }
+      if (name === "childJourney.complete") { childState = "COMPLETED"; return { result: { data: { json: childReading(childState, helpRequested) } } }; }
+      if (name === "childJourney.teacherReview") return { result: { data: { json: teacherMockReview } } };
       if (name === "readerLeader.preview") return { result: { data: { json: null } } };
       return { result: { data: { json: null } } };
     });
@@ -166,7 +183,7 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByRole("heading", { name: /Demonstrate the safety path/i })).toBeVisible();
     await expect(page.getByText("Synthetic only", { exact: true })).toBeVisible();
     await expect(page.getByText("Consent-gated session", { exact: true })).toBeVisible();
-    await expect(page.getByText("Mock upload metadata", { exact: true })).toBeVisible();
+    await expect(page.getByText("Launch & mock upload", { exact: true })).toBeVisible();
     await expect(page.getByText("Interactive safe trace", { exact: true })).toBeVisible();
     await expect(page.getByText("Active guardian consent was verified before mock processing.", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Run deterministic mock analysis" })).toBeVisible();
@@ -189,6 +206,28 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByRole("alertdialog", { name: "Reset synthetic demo sessions?" })).toBeVisible();
     await expect(page.getByText(/removes only sessions tagged as synthetic demo records/i)).toBeVisible();
     await page.getByRole("button", { name: "Keep sessions" }).click();
+  });
+
+  test("teacher launch hands a synthetic child reading journey back to deterministic adult review", async ({ page }) => {
+    await authenticate(page, teacher);
+    await page.goto("/session-demo");
+    await page.getByRole("button", { name: "Launch child reading canvas" }).click();
+    await expect(page.getByRole("link", { name: /Open the synthetic child reader/i })).toHaveAttribute("href", `/read/${childToken}`);
+    await page.goto(`/read/${childToken}`);
+    await expect(page.getByRole("heading", { name: "The gentle harbour" })).toBeVisible();
+    await expect(page.getByText(/does not record, upload, score, or analyse your voice/i)).toBeVisible();
+    await expect(page.getByText(/teacher review/i)).toHaveCount(0);
+    await page.getByRole("button", { name: "Start reading" }).click();
+    await page.getByRole("button", { name: "I would like some help" }).click();
+    await expect(page.getByText(/Your teacher knows you would like help/i)).toBeVisible();
+    await page.getByRole("button", { name: "I am finished" }).click();
+    await expect(page.getByRole("heading", { name: "Thank you for reading." })).toBeVisible();
+    await page.goto(`/session-review/${hackathonDemoSummary.sessions[0].id}`);
+    await expect(page.getByRole("heading", { name: /Reading review/i })).toBeVisible();
+    await expect(page.getByText("Deterministic mock word events", { exact: true })).toBeVisible();
+    await expect(page.getByText("through", { exact: true })).toBeVisible();
+    await expect(page.getByText("SELF CORRECTION", { exact: true })).toBeVisible();
+    await expect(page.getByText(/does not diagnose a learner/i)).toHaveCount(2);
   });
 
   test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {

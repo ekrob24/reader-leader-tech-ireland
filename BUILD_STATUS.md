@@ -24,6 +24,7 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 | Hackathon session demonstration | Complete, mock-only | Consent-gated session creation, metadata-only mock upload, persisted job states, deterministic safe traces, and adult dashboard; no audio bytes, transcription, or automated worker execution. |
 | Hackathon presentation controls | Complete | Clearly labelled synthetic Demo Mode, approval-gate indicators and pending-only filters, plus an interactive accessible mock-trace timeline across desktop and mobile layouts. |
 | Hackathon facilitator controls | Complete | School-lead-only synthetic-session reset with confirmation, judge-facing consent/content/trace tour, and a client-side JSON export that excludes learner, passage, file, organisation, and storage identifiers. |
+| Synthetic reading journey | Complete, mock-only | Teacher creates a consent-gated synthetic session, launches a 30-minute opaque child link, child reads an approved passage with safe help/finish states, and teacher reviews deterministic mock word events. No audio, score, diagnostic, or child identity is displayed or processed. |
 
 ## Current technical boundaries
 
@@ -32,8 +33,8 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 | Application runtime | React, Vite, Express, tRPC, TypeScript | The separate Next.js/Vercel production migration recommended in the long-term plan. |
 | Identity and tenancy | Manus-authenticated actor linked to Supabase Auth identity; Supabase membership/RLS checks | School SSO, OIDC/SAML, invitation workflow, guardian self-service. |
 | Decision system | Deterministic evidence, bounded judgement, policy validation, auditability | Live agent run, production prompt tracing, provider monitoring. |
-| Speech and audio | Private key and deletion-inventory foundation | Consent-gated browser upload/session creation, physical object deletion/lifecycle policy, alignment, speech-provider adapter, playback. |
-| Learner experience | Teacher-owned safe preview only | Production child reading canvas and child account workflow. |
+| Speech and audio | Private key and deletion-inventory foundation; synthetic child canvas | Binary upload, physical object deletion/lifecycle policy, alignment, speech-provider adapter, playback, and live reading assessment. |
+| Learner experience | Synthetic child reading canvas with safe finish/help and adult hand-off | Production child accounts, accessibility/safeguarding review, and real audio session flow. |
 | Data governance | Consent, withdrawal, retention eligibility, deletion requests and receipts, schema/RLS baselines; synthetic data only | Private storage deletion executor, backup restoration, DPIA and operational runbooks. |
 
 ## Next work, in priority order
@@ -44,4 +45,4 @@ Reader Leader is a **production-shaped vertical-slice prototype** for an accent-
 
 ## Verification baseline
 
-The current verified baseline is clean TypeScript checking, **72 Vitest tests**, **10 Playwright tests**, and assertion-backed authenticated browser routes for learner safety, content workflow, and session demo. The test suite includes live two-organisation RLS checks, row-normalization tests, contract-boundary log redaction checks, guardian lifecycle/RLS checks, withdrawal/deletion trigger checks, key-revocation receipt verification, content-review RLS tests, approved-passage selection tests, consent-gate contracts, mock-upload metadata validation, demo-mode/filter/timeline browser coverage, guarded reset/export contract tests, and safe error-state coverage. The direct preview endpoint is unauthenticated and therefore displays its protected-route loading state; authenticated browser behaviour is the assertion-backed E2E baseline.
+The current verified baseline is clean TypeScript checking, **75 Vitest tests**, **11 Playwright tests**, and assertion-backed browser routes for learner safety, content workflow, session demo, child reader, and teacher review hand-off. The test suite includes live two-organisation RLS checks, row-normalization tests, contract-boundary log redaction checks, guardian lifecycle/RLS checks, withdrawal/deletion trigger checks, key-revocation receipt verification, content-review RLS tests, approved-passage selection tests, consent-gate contracts, mock-upload metadata validation, synthetic child-token constraints, adult/child data-boundary tests, and child-completion hand-off coverage. The direct preview endpoint is unauthenticated and therefore displays its protected-route loading state; authenticated browser behaviour is the assertion-backed E2E baseline.
