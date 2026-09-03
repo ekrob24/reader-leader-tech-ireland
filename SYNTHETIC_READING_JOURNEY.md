@@ -39,6 +39,14 @@ The session history includes **All sessions** and **Review ready** filters. It d
 
 The child canvas presents a local “Part *n* of *n*” place marker, a visual progress bar, and earlier/next navigation when an approved passage has more than one sentence. It is explicitly described as navigation help, not a score, pace metric, or assessment result.
 
+## Completion alerts, saved place, and review summary
+
+The teacher navigation shows a small, teacher-only notification count when synthetic sessions have reached **Review ready**. It polls the existing protected history endpoint every ten seconds while an adult dashboard is open; it does not reveal child links or details outside the authorised teacher view.
+
+The child canvas provides **Save my place** and **Return to saved part** controls. The bookmark is stored only in that browser’s local storage against the opaque demo-session token. It is neither sent to the server nor treated as behavioural data, and it is intentionally limited to the synthetic hackathon experience.
+
+The adult session review includes **Print safe summary**. Print media styling removes the dashboard navigation and follow-up controls while retaining the synthetic-only label, passage title, deterministic mock event cards, and the statement that a teacher retains final judgement. It does not include learner labels, session IDs, child links, audio references, or storage metadata.
+
 ## Production boundary
 
 This slice is intentionally **not** a live reading assessment. It does not activate a microphone, store bytes, upload audio, call a speech provider, calculate reading metrics, or infer a diagnosis. Those features remain blocked until private storage, physical deletion, provider agreements, durable task infrastructure, and safeguarding approval are complete.

@@ -21,11 +21,13 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
+import { trpc } from "@/lib/trpc";
 import { BookOpenCheck, LayoutDashboard, LogOut, PanelLeft, PlayCircle, Users } from "lucide-react";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 
 export const dashboardMenuItems = [
   { id: "evidence-desk", icon: LayoutDashboard, label: "Evidence desk", path: "/" },
@@ -114,6 +116,11 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = dashboardMenuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const organisations = trpc.contentWorkflow.organisations.useQuery();
+  const notificationOrganisationId = organisations.data?.[0]?.id;
+  const notificationInput = useMemo(() => ({ organisationId: notificationOrganisationId ?? "00000000-0000-4000-8000-000000000000", limit: 12 }), [notificationOrganisationId]);
+  const sessionHistory = trpc.hackathonDemo.teacherHistory.useQuery(notificationInput, { enabled: Boolean(notificationOrganisationId), refetchInterval: 10_000 });
+  const reviewReadyCount = sessionHistory.data?.items.filter(item => item.reviewStatus === "READY_FOR_REVIEW").length ?? 0;
 
   useEffect(() => {
     if (isCollapsed) {
@@ -194,6 +201,7 @@ function DashboardLayoutContent({
                         className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
                       />
                       <span>{item.label}</span>
+                      {item.id === "session-demo" && reviewReadyCount > 0 ? <Badge aria-label={`${reviewReadyCount} session${reviewReadyCount === 1 ? "" : "s"} ready for review`} className="ml-auto min-w-5 justify-center rounded-full border-0 bg-[#4f836f] px-1.5 py-0 text-[10px] font-bold text-white group-data-[collapsible=icon]:hidden">{reviewReadyCount}</Badge> : null}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

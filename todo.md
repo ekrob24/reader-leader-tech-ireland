@@ -345,3 +345,13 @@ The authoritative vertical-slice specification defines S1–S8 contracts, eviden
 - [x] Add a child-safe visual passage-progress indicator that tracks local reading position without scoring or diagnostic inference.
 - [x] Add unit and Playwright coverage; run TypeScript, full tests, and desktop/mobile visual verification: 78 Vitest tests and 11 Playwright tests pass.
 - [x] Document the workflow enhancements and save a checkpoint.
+
+## Reading journey follow-through: completion alerts, bookmarks, and print summary
+
+- [x] Inspect teacher dashboard navigation, session state persistence, child canvas, adult review screen, and test conventions.
+- [x] Add privacy-safe teacher completion alert retrieval and a child bookmark boundary that stores only a synthetic session’s local browser position.
+- [x] Add a visible teacher completion badge and session-history review link without exposing child session tokens.
+- [x] Add local sentence bookmarking and return-to-place controls to the child canvas with no score or behavioural analytics.
+- [x] Add a print-focused adult review summary that contains only safe, teacher-authorised mock review content.
+- [x] Add unit, router, and Playwright coverage; run TypeScript, full tests, and desktop/mobile visual verification: 78 Vitest tests and 11 Playwright tests pass.
+- [x] Document the feature boundaries and save a checkpoint.

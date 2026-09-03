@@ -211,3 +211,9 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@media print {
+  [data-sidebar], .print-hidden, nav, aside { display: none !important; }
+  body, main, .print-review { background: #fff !important; color: #172d31 !important; }
+  .print-review { max-width: 100% !important; }
+}

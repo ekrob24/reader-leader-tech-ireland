@@ -87,7 +87,7 @@ async function authenticate(page: Page, user: User, scenario: Scenario = "succes
       if (name === "consentLifecycle.retentionEligibility") return { result: { data: { json: { learnerId: learner.id, purpose: "READING_ASSESSMENT", status: "ACTIVE", mayProcessData: true, retentionUntil: "2030-12-31T23:59:59.000Z" } } } };
       if (name.startsWith("contentWorkflow.")) return { result: { data: { json: contentOverview.reviewQueue[0] } } };
       if (name === "hackathonDemo.summary") return { result: { data: { json: hackathonDemoSummary } } };
-      if (name === "hackathonDemo.teacherHistory") return { result: { data: { json: { organisationId: learner.organisationId, items: [{ id: hackathonDemoSummary.sessions[0].id, learnerLabel: "Ava", passageTitle: "The gentle harbour", sessionStatus: "CREATED", completionStatus: "READY_TO_START", reviewStatus: "NOT_READY", createdAt: "2026-09-02T10:00:00.000Z", completedAt: null }] } } } };
+      if (name === "hackathonDemo.teacherHistory") return { result: { data: { json: { organisationId: learner.organisationId, items: [{ id: hackathonDemoSummary.sessions[0].id, learnerLabel: "Ava", passageTitle: "The gentle harbour", sessionStatus: "CREATED", completionStatus: "READY_TO_START", reviewStatus: "NOT_READY", createdAt: "2026-09-02T10:00:00.000Z", completedAt: null }, { id: "00000000-0000-4000-8000-000000000032", learnerLabel: "Ava", passageTitle: "The gentle harbour", sessionStatus: "READY", completionStatus: "COMPLETED", reviewStatus: "READY_FOR_REVIEW", createdAt: "2026-09-02T09:00:00.000Z", completedAt: "2026-09-02T09:05:00.000Z" }] } } } };
       if (name === "hackathonDemo.resetSyntheticSessions") return { result: { data: { json: { deletedSessions: 1 } } } };
       if (name.startsWith("hackathonDemo.")) return { result: { data: { json: hackathonDemoSummary.sessions[0] } } };
       if (name === "childJourney.launch") return { result: { data: { json: { childPath: `/read/${childToken}`, expiresAt: "2026-09-03T12:30:00.000Z", mockOnly: true } } } };
@@ -191,6 +191,7 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByRole("button", { name: "Run deterministic mock analysis" })).toBeVisible();
     await expect(page.getByText("Synthetic session history", { exact: true })).toBeVisible();
     await expect(page.getByText("Awaiting finish", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("1 session ready for review")).toBeVisible();
     await expect(page.getByText(/does not capture or transmit a recording/i)).toBeVisible();
     await expect(page.getByRole("status")).toContainText("Demo Mode is on.");
     await expect(page.getByText("Synthetic file preset", { exact: true })).toBeVisible();
@@ -216,8 +217,8 @@ test.describe("authenticated learner safety navigation", () => {
     await page.goto("/session-demo");
     await expect(page.getByRole("heading", { name: "Teacher session checklist" })).toBeVisible();
     await expect(page.getByText("Active synthetic consent is available", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Review ready" }).click();
-    await expect(page.getByText("No completed synthetic sessions are ready for adult review.", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Review ready", exact: true }).click();
+    await expect(page.getByText("Review ready", { exact: true }).last()).toBeVisible();
     await page.getByRole("button", { name: "All sessions" }).click();
     await page.getByRole("button", { name: "Launch child reading canvas" }).click();
     await expect(page.getByRole("link", { name: /Open the synthetic child reader/i })).toHaveAttribute("href", `/read/${childToken}`);
@@ -230,6 +231,10 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("Part 1 of 2", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Next part" }).click();
     await expect(page.getByText("Part 2 of 2", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Save my place" }).click();
+    await page.getByRole("button", { name: "Earlier part" }).click();
+    await page.getByRole("button", { name: "Return to saved part" }).click();
+    await expect(page.getByText("Your saved place is part 2.", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Spacious" }).click();
     await page.getByRole("button", { name: "Focus mode" }).click();
     await expect(page.getByRole("button", { name: "Exit focus mode" })).toBeVisible();
@@ -244,6 +249,7 @@ test.describe("authenticated learner safety navigation", () => {
     await expect(page.getByText("through", { exact: true })).toBeVisible();
     await expect(page.getByText("SELF CORRECTION", { exact: true })).toBeVisible();
     await expect(page.getByText(/does not diagnose a learner/i)).toHaveCount(2);
+    await expect(page.getByRole("button", { name: "Print safe summary" })).toBeVisible();
   });
 
   test("an invalid persisted timeline record has a safe and actionable recovery state", async ({ page }) => {
